@@ -168,7 +168,7 @@
     let currentTab = 'form'; 
     let teamMembers = [];
     let pendingEmailData = null;
-    let submissions = [];
+    let submissions = JSON.parse(localStorage.getItem('LASKAR_SUBMISSIONS')) || [];
     let currentActiveFile = null;
 
     function createEncryptedToken(user) {
@@ -378,7 +378,6 @@
         pwdGroup.style.display = 'none';
         pwdInput.removeAttribute('required');
         btnText.innerText = 'Masuk Tanpa Sandi';
-        hint.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Domain Student UMS Aktif (Tanpa Sandi).</span>`;
       } else {
         pwdGroup.style.display = 'block';
         pwdInput.setAttribute('required', 'true');
@@ -447,14 +446,19 @@
                   </select>
                 </div>
 
+                <div id="nominal-detail-container" class="sm:col-span-2 hidden bg-amber-50/70 p-4 rounded-2xl border border-amber-200/60">
+                  <label id="nominal-detail-label" class="block text-xs font-bold text-amber-900 mb-1.5 uppercase">Nominal <span class="text-red-600">*</span></label>
+                  <input type="text" id="nominalDetailInput" oninput="formatRupiahInput(this)" class="w-full px-3.5 py-2 text-sm border border-amber-300 rounded-xl outline-none bg-white font-bold text-slate-800 shadow-sm" placeholder="Contoh: 150.000">
+                </div>
+
                 <div class="sm:col-span-2">
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Nama Event Lomba<span class="text-red-600">*</span></label>
-                  <input type="text" id="namaEvent" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none focus:border-mpq-700 shadow-sm" placeholder="Contoh:Qur'anic Fest 2026">
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Nama Event Lomba <span class="text-red-600">*</span></label>
+                  <input type="text" id="namaEvent" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none focus:border-mpq-700 shadow-sm" placeholder="Contoh: Qur'anic Fest 2026">
                 </div>
 
                 <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Cabang  Lomba<span class="text-red-600">*</span></label>
-                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: MHQ 10 Juz">
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Nama Cabang Lomba <span class="text-red-600">*</span></label>
+                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: Hifdzil 10 Juz">
                 </div>
 
                 <div>
@@ -575,14 +579,37 @@
       const juaraSection = document.getElementById('juara-section');
       const juaraSelect = document.getElementById('juara');
 
-      // Penanganan fleksibel untuk value 'Non-Juara' maupun 'Apresiasi/Non-Juara'
+      const nominalContainer = document.getElementById('nominal-detail-container');
+      const nominalLabel = document.getElementById('nominal-detail-label');
+      const nominalInput = document.getElementById('nominalDetailInput');
+
+      if (value === 'Insentif') {
+        nominalContainer.classList.remove('hidden');
+        nominalLabel.innerHTML = `HTM Lomba <span class="text-red-600">*</span>`;
+        nominalInput.placeholder = "Masukkan nominal HTM pendaftaran lomba ex: 50.000";
+        nominalInput.setAttribute('required', 'true');
+      } else if (value === 'Subsidi') {
+        nominalContainer.classList.remove('hidden');
+        nominalLabel.innerHTML = `Nominal Subsidi <span class="text-red-600">*</span>`;
+        nominalInput.placeholder = "Masukkan jumlah subsidi yang diajukan ex: 50.000";
+        nominalInput.setAttribute('required', 'true');
+      } else if (value === 'Transportasi') {
+        nominalContainer.classList.remove('hidden');
+        nominalLabel.innerHTML = `Nominal Transport <span class="text-red-600">*</span>`;
+        nominalInput.placeholder = "Masukkan nominal biaya transportasi ex: 50.000";
+        nominalInput.setAttribute('required', 'true');
+      } else {
+        nominalContainer.classList.add('hidden');
+        nominalInput.value = '';
+        nominalInput.removeAttribute('required');
+      }
+
       if (value === 'Non-Juara' || value === 'Apresiasi/Non-Juara') {
         if (rekeningSection) rekeningSection.classList.add('hidden');
         if (rekProvider) rekProvider.removeAttribute('required');
         if (rekNomor) rekNomor.removeAttribute('required');
         if (berkasNum) berkasNum.innerText = '3';
 
-        // Sembunyikan Capaian / Hasil Lomba
         if (juaraSection) juaraSection.classList.add('hidden');
         if (juaraSelect) juaraSelect.removeAttribute('required');
       } else {
@@ -591,7 +618,6 @@
         if (rekNomor) rekNomor.setAttribute('required', 'true');
         if (berkasNum) berkasNum.innerText = '4';
 
-        // Tampilkan Capaian / Hasil Lomba
         if (juaraSection) juaraSection.classList.remove('hidden');
         if (juaraSelect) juaraSelect.setAttribute('required', 'true');
       }
@@ -621,18 +647,20 @@
                   <tr class="bg-slate-800 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-700">
                     <th class="py-3.5 px-5">ID / Tanggal</th>
                     <th class="py-3.5 px-5">Jenis Ajuan</th>
+                    <th class="py-3.5 px-5">Nominal</th>
                     <th class="py-3.5 px-5">Event Lomba</th>
                     <th class="py-3.5 px-5">Capaian</th>
                     <th class="py-3.5 px-5">Rekening Target</th>
                     <th class="py-3.5 px-5">Status Review</th>
                     <th class="py-3.5 px-5">Status Dana</th>
                     <th class="py-3.5 px-5 text-center">Berkas</th>
+                    <th class="py-3.5 px-5 text-center">Trash</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                   ${mySubmissions.length === 0 ? `
                     <tr>
-                      <td colspan="8" class="py-16 text-center text-slate-400">
+                      <td colspan="10" class="py-16 text-center text-slate-400">
                         <div class="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
                           <i class="fa-solid fa-box-open"></i>
                         </div>
@@ -650,12 +678,15 @@
                           ${sub.jenisAjuan || 'Insentif'}
                         </span>
                       </td>
+                      <td class="py-4 px-5 font-bold text-emerald-800">
+                        ${sub.nominalDetail ? `Rp ${sub.nominalDetail}` : '<span class="text-slate-400 font-normal italic">-</span>'}
+                      </td>
                       <td class="py-4 px-5">
                         <p class="font-bold text-slate-900">${sub.namaEvent}</p>
                         <p class="text-[11px] text-slate-500 mt-0.5">${sub.namaCabang ? sub.namaCabang + ' • ' : ''}${sub.penyelenggara || ''}</p>
                       </td>
                       <td class="py-4 px-5">
-                        <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200 mb-1">
+                        <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
                           ${sub.juara}
                         </span>
                         <p class="text-[10px] text-slate-500">${sub.level}</p>
@@ -677,6 +708,11 @@
                           <i class="fa-solid fa-file-pdf text-red-600"></i> Lihat
                         </button>
                       </td>
+                      <td class="py-4 px-5 text-center">
+                        <button onclick="deleteSubmission('${sub.id}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
+                          <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                      </td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -695,7 +731,6 @@
       const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
       const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
       
-      // Hitung Non-Juara berdasarkan Jenis Ajuan
       const totalNonJuara = mySubs.filter(s => s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
 
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
@@ -815,7 +850,7 @@
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
-                <i class="fa-solid fa-user-shield text-gold-500 text-lg"></i> Panel Review DMPH MPQ
+                <i class="fa-solid fa-user-shield text-gold-500 text-lg"></i> Review DMPH
               </h2>
               <p class="text-xs text-slate-500 mt-1">Otoritas peninjauan dan verifikasi pengajuan seluruh mahasiswa.</p>
             </div>
@@ -834,6 +869,7 @@
               <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Status Review</label>
               <select id="adminFilterReview" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
                 <option value="ALL">Semua Status Review</option>
+                <option value="Belum Direview">Belum Direview</option>
                 <option value="Sudah Direview">Sudah Direview</option>
                 <option value="Perlu Revisi">Perlu Revisi</option>
               </select>
@@ -856,34 +892,44 @@
                   <tr class="bg-mpq-900 text-white text-xs font-bold uppercase tracking-wider">
                     <th class="py-3.5 px-5">Pengusul & Event</th>
                     <th class="py-3.5 px-5">Jenis Ajuan</th>
+                    <th class="py-3.5 px-5">Nominal</th>
                     <th class="py-3.5 px-5">Capaian</th>
                     <th class="py-3.5 px-5">Rekening Tujuan</th>
                     <th class="py-3.5 px-5">Berkas</th>
-                    <th class="py-3.5 px-5">Aksi Review</th>
-                    <th class="py-3.5 px-5">Aksi Dana</th>
+                    <th class="py-3.5 px-5">Status Review</th>
+                    <th class="py-3.5 px-5">Status Dana</th>
+                    <th class="py-3.5 px-5 text-center">Trash</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                   ${submissions.length === 0 ? `
                     <tr>
-                      <td colspan="7" class="py-16 text-center text-slate-400">
+                      <td colspan="9" class="py-16 text-center text-slate-400">
                         Belum ada berkas atau data pengajuan yang masuk ke sistem DMPH.
                       </td>
                     </tr>
                   ` : submissions.map((sub) => `
                     <tr class="hover:bg-slate-50/80 transition submission-row" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()}" data-review="${sub.statusReview}" data-dana="${sub.statusDana}">
+                      <!-- Kolom 1: Pengusul & Event -->
                       <td class="py-4 px-5">
                         <p class="font-bold text-slate-900 text-sm">${sub.pengusulName}</p>
                         <p class="text-[11px] font-mono text-slate-500">${sub.pengusulNim}</p>
                         <p class="font-bold text-xs text-mpq-800 mt-1">${sub.namaEvent}</p>
                       </td>
 
+                      <!-- Kolom 2: Jenis Ajuan -->
                       <td class="py-4 px-5">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
                           ${sub.jenisAjuan || 'Insentif'}
                         </span>
                       </td>
 
+                      <!-- Kolom 3: Nominal -->
+                      <td class="py-4 px-5 font-bold text-emerald-800">
+                        ${sub.nominalDetail ? `Rp ${sub.nominalDetail}` : '<span class="text-slate-400 font-normal italic">-</span>'}
+                      </td>
+
+                      <!-- Kolom 4: Capaian -->
                       <td class="py-4 px-5">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
                           ${sub.juara}
@@ -891,6 +937,7 @@
                         <p class="text-[10px] text-slate-500">${sub.level}</p>
                       </td>
 
+                      <!-- Kolom 5: Rekening Tujuan -->
                       <td class="py-4 px-5">
                         ${sub.rekeningProvider ? `
                           <span class="font-bold text-slate-900">${sub.rekeningProvider}</span>
@@ -898,22 +945,26 @@
                         ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
                       </td>
 
+                      <!-- Kolom 6: Berkas -->
                       <td class="py-4 px-5">
                         <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
                           <i class="fa-solid fa-file-pdf text-red-600"></i> Cek Berkas
                         </button>
                       </td>
 
+                      <!-- Kolom 7: Status Review -->
                       <td class="py-4 px-5 space-y-2">
                         ${renderBadgeReview(sub.statusReview)}
                         <div>
                           <select onchange="updateReviewStatus('${sub.id}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
+                            <option value="Belum Direview" ${sub.statusReview === 'Belum Direview' ? 'selected' : ''}>Belum Direview</option>
                             <option value="Sudah Direview" ${sub.statusReview === 'Sudah Direview' ? 'selected' : ''}>Sudah Direview</option>
                             <option value="Perlu Revisi" ${sub.statusReview === 'Perlu Revisi' ? 'selected' : ''}>Perlu Revisi</option>
                           </select>
                         </div>
                       </td>
 
+                      <!-- Kolom 8: Status Dana -->
                       <td class="py-4 px-5 space-y-2">
                         ${renderBadgeDana(sub.statusDana)}
                         <div>
@@ -923,6 +974,13 @@
                             <option value="Dana Dicairkan" ${sub.statusDana === 'Dana Dicairkan' ? 'selected' : ''}>Dana Dicairkan</option>
                           </select>
                         </div>
+                      </td>
+
+                      <!-- Kolom 9: Tombol Hapus (Ikon Sampah) -->
+                      <td class="py-4 px-5 text-center">
+                        <button onclick="deleteSubmission('${sub.id}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
+                          <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
                       </td>
                     </tr>
                   `).join('')}
@@ -935,10 +993,12 @@
     }
 
     function renderBadgeReview(status) {
+      if (status === 'Belum Direview' || status === 'Belum Diproses')
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-200"><i class="fa-solid fa-circle-xmark text-rose-600"></i> Belum Direview</span>`;
       if (status === 'Sudah Direview' || status === 'Disetujui') {
         return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
       } else if (status === 'Perlu Revisi') {
-        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-200"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perlu Revisi</span>`;
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-emerald-200"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perlu Revisi</span>`;
       }
       return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
     }
@@ -1072,12 +1132,15 @@
       const jenis = document.getElementById('jenisAjuan').value;
       const isNonRek = (jenis === 'Non-Juara' || jenis === 'Apresiasi/Non-Juara');
 
+      const nominalVal = document.getElementById('nominalDetailInput') ? document.getElementById('nominalDetailInput').value : '';
+
       const newSub = {
         id: 'LASKAR-' + (800 + submissions.length + 1),
         userEmail: currentUser.email,
         pengusulName: currentUser.name,
         pengusulNim: currentUser.nim,
         jenisAjuan: jenis,
+        nominalDetail: nominalVal,
         namaEvent: document.getElementById('namaEvent').value,
         namaCabang: document.getElementById('namaCabang').value,
         level: document.getElementById('level').value,
@@ -1097,6 +1160,7 @@
       };
 
       submissions.unshift(newSub);
+      localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
       teamMembers = [];
       selectedFileName = '';
       selectedFileUrl = '';
@@ -1111,6 +1175,7 @@
       const sub = submissions.find(s => s.id === id);
       if (!sub) return;
       sub.statusReview = newStatus;
+      localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
       showToast('Status Review Diperbarui', `Status review ${sub.id} menjadi: ${newStatus}`, 'info');
       renderApp();
     }
@@ -1120,6 +1185,7 @@
       const sub = submissions.find(s => s.id === id);
       if (!sub) return;
       sub.statusDana = newStatus;
+      localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
       showToast('Status Dana Diperbarui', `Status dana ${sub.id} menjadi: ${newStatus}`, 'success');
 
       triggerEmailNotification(
@@ -1129,6 +1195,15 @@
       );
 
       renderApp();
+    }
+
+    function deleteSubmission(id) {
+      if (confirm('Apakah Anda yakin ingin menghapus pengajuan dengan ID ' + id + ' ini?')) {
+        submissions = submissions.filter(sub => sub.id !== id);
+        localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
+        showToast('Berhasil Dihapus', `Data pengajuan ${id} telah dihapus dari sistem.`, 'success');
+        renderApp();
+      }
     }
 
     function filterAdminTable() {
@@ -1269,6 +1344,21 @@
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 300);
       }, 3500);
+    }
+
+    function formatRupiahInput(input) {
+      let angka = input.value.replace(/[^,\d]/g, '');
+      let split = angka.split(',');
+      let sisa = split[0].length % 3;
+      let rupiah = split[0].substr(0, sisa);
+      let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+      if (ribuan) {
+        let separator = sisa ? '.' : '';
+        rupiah += separator + ribuan.join('.');
+      }
+
+      input.value = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
     }
 
     window.onload = function() {
