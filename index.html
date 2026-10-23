@@ -493,9 +493,6 @@
                     <option value="Juara 1">Juara 1</option>
                     <option value="Juara 2">Juara 2</option>
                     <option value="Juara 3">Juara 3</option>
-                    <option value="Juara Harapan">Juara Harapan</option>
-                    <option value="Finalis">Finalis</option>
-                    <option value="Peserta/Delegasi">Peserta / Delegasi (Non-Juara)</option>
                   </select>
                 </div>
               </div>
@@ -587,7 +584,7 @@
       const rekNomor = document.getElementById('nomorRekening');
       const berkasNum = document.getElementById('berkas-step-num');
 
-      if (value === 'Apresiasi/Non-Juara') {
+      if (value === 'Non-Juara') {
         rekeningSection.classList.add('hidden');
         rekProvider.removeAttribute('required');
         rekNomor.removeAttribute('required');
