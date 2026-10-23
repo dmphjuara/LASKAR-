@@ -453,7 +453,7 @@
                 </div>
 
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Nama Event Lomba <span class="text-red-600">*</span></label>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Event Lomba <span class="text-red-600">*</span></label>
                   <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: Hifzhil 10 Juz">
                 </div>
 
@@ -466,7 +466,7 @@
                     <option value="Internasional">Internasional</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Jenis Kompetisi <span class="text-red-600">*</span></label>
                   <select id="jenisKompetisi" onchange="toggleTeamFields(this.value)" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white shadow-sm">
@@ -475,7 +475,7 @@
                   </select>
                 </div>
 
-                <div>
+                <div id="juara-section">
                   <label class="block text-xs font-bold text-slate-700 mb-1">Capaian / Hasil Lomba <span class="text-red-600">*</span></label>
                   <select id="juara" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white shadow-sm">
                     <option value="">-- Pilih Capaian --</option>
@@ -572,17 +572,28 @@
       const rekProvider = document.getElementById('rekeningProvider');
       const rekNomor = document.getElementById('nomorRekening');
       const berkasNum = document.getElementById('berkas-step-num');
+      const juaraSection = document.getElementById('juara-section');
+      const juaraSelect = document.getElementById('juara');
 
-      if (value === 'Non-Juara') {
-        rekeningSection.classList.add('hidden');
-        rekProvider.removeAttribute('required');
-        rekNomor.removeAttribute('required');
+      // Penanganan fleksibel untuk value 'Non-Juara' maupun 'Apresiasi/Non-Juara'
+      if (value === 'Non-Juara' || value === 'Apresiasi/Non-Juara') {
+        if (rekeningSection) rekeningSection.classList.add('hidden');
+        if (rekProvider) rekProvider.removeAttribute('required');
+        if (rekNomor) rekNomor.removeAttribute('required');
         if (berkasNum) berkasNum.innerText = '3';
+
+        // Sembunyikan Capaian / Hasil Lomba
+        if (juaraSection) juaraSection.classList.add('hidden');
+        if (juaraSelect) juaraSelect.removeAttribute('required');
       } else {
-        rekeningSection.classList.remove('hidden');
-        rekProvider.setAttribute('required', 'true');
-        rekNomor.setAttribute('required', 'true');
+        if (rekeningSection) rekeningSection.classList.remove('hidden');
+        if (rekProvider) rekProvider.setAttribute('required', 'true');
+        if (rekNomor) rekNomor.setAttribute('required', 'true');
         if (berkasNum) berkasNum.innerText = '4';
+
+        // Tampilkan Capaian / Hasil Lomba
+        if (juaraSection) juaraSection.classList.remove('hidden');
+        if (juaraSelect) juaraSelect.setAttribute('required', 'true');
       }
     }
 
@@ -641,7 +652,7 @@
                       </td>
                       <td class="py-4 px-5">
                         <p class="font-bold text-slate-900">${sub.namaEvent}</p>
-                        <p class="text-[11px] text-slate-500 mt-0.5">${sub.namaCabang ? sub.namaCabang + ' • ' : ''}${sub.penyelenggara}</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">${sub.namaCabang ? sub.namaCabang + ' • ' : ''}${sub.penyelenggara || ''}</p>
                       </td>
                       <td class="py-4 px-5">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200 mb-1">
@@ -676,15 +687,16 @@
       `;
     }
 
-    // FUNGSI TAB BARU: STATISTIK & GRAFIK PRESTASI
     function renderStatisticsView() {
       const mySubs = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
       
       const totalAjuan = mySubs.length;
-      const totalJuara1 = mySubs.filter(s => s.juara === 'Juara 1').length;
-      const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2').length;
-      const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3').length;
-      const totalLainnya = totalAjuan - (totalJuara1 + totalJuara2 + totalJuara3);
+      const totalJuara1 = mySubs.filter(s => s.juara === 'Juara 1' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
+      const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
+      const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
+      
+      // Hitung Non-Juara berdasarkan Jenis Ajuan
+      const totalNonJuara = mySubs.filter(s => s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
 
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
       const daparProses = mySubs.filter(s => s.statusDana === 'Disetujui').length;
@@ -737,12 +749,12 @@
             </div>
 
             <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center text-xl font-bold shadow-inner">
-                <i class="fa-solid fa-money-bill-wave"></i>
+              <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold shadow-inner">
+                <i class="fa-solid fa-user-ninja"></i>
               </div>
               <div>
-                <p class="text-xs text-slate-400 font-bold uppercase">Dana Dicairkan</p>
-                <p class="text-2xl font-bold text-slate-900">${danaCair}</p>
+                <p class="text-xs text-slate-400 font-bold uppercase">Ajuan Non-Juara</p>
+                <p class="text-2xl font-bold text-slate-900">${totalNonJuara}</p>
               </div>
             </div>
           </div>
@@ -751,7 +763,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
               <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
-                <i class="fa-solid fa-chart-column text-mpq-800"></i> Distribusi Capaian Lomba
+                <i class="fa-solid fa-chart-column text-mpq-800"></i> Distribusi Capaian / Jenis Ajuan
               </h3>
               <div class="space-y-3 pt-2">
                 <div>
@@ -767,8 +779,8 @@
                   <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-amber-700 h-full rounded-full" style="width: ${totalAjuan ? (totalJuara3/totalAjuan)*100 : 0}%"></div></div>
                 </div>
                 <div>
-                  <div class="flex justify-between text-xs font-bold mb-1"><span>Finalis / Peserta / Non-Juara</span><span>${totalLainnya} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-emerald-600 h-full rounded-full" style="width: ${totalAjuan ? (totalLainnya/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Apresiasi / Non-Juara</span><span>${totalNonJuara} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-teal-600 h-full rounded-full" style="width: ${totalAjuan ? (totalNonJuara/totalAjuan)*100 : 0}%"></div></div>
                 </div>
               </div>
             </div>
@@ -1058,7 +1070,7 @@
       }
 
       const jenis = document.getElementById('jenisAjuan').value;
-      const isNonRek = (jenis === 'Apresiasi/Non-Juara');
+      const isNonRek = (jenis === 'Non-Juara' || jenis === 'Apresiasi/Non-Juara');
 
       const newSub = {
         id: 'LASKAR-' + (800 + submissions.length + 1),
@@ -1069,12 +1081,11 @@
         namaEvent: document.getElementById('namaEvent').value,
         namaCabang: document.getElementById('namaCabang').value,
         level: document.getElementById('level').value,
-        jumlahPeserta: document.getElementById('jumlahPeserta').value,
         jenisKompetisi: document.getElementById('jenisKompetisi').value,
-        juara: document.getElementById('juara').value,
+        juara: isNonRek ? 'Non-Juara / Peserta' : (document.getElementById('juara') ? document.getElementById('juara').value : 'Non-Juara / Peserta'),
         namaTim: document.getElementById('namaTim') ? document.getElementById('namaTim').value : '',
         anggotaTim: [...teamMembers],
-        penyelenggara: document.getElementById('penyelenggara').value,
+        penyelenggara: '',
         rekeningProvider: isNonRek ? '' : (document.getElementById('rekeningProvider') ? document.getElementById('rekeningProvider').value : ''),
         nomorRekening: isNonRek ? '' : (document.getElementById('nomorRekening') ? document.getElementById('nomorRekening').value : ''),
         sertifikatName: selectedFileName || 'sertifikat_laskar.pdf',
