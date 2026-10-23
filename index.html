@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LASKAR - MPQ </title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- EmailJS SDK -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script type="text/javascript">
+    (function(){
+       emailjs.init({
+         publicKey: "stpoZaSZhejlns5fF",
+       });
+    })();
+  </script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Times New Roman"', 'Times', 'serif'],
+          },
+          colors: {
+            mpq: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              950: '#052e16',
+            },
+            gold: {
+              400: '#facc15',
+              500: '#eab308',
+              600: '#ca8a04'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body, input, select, textarea, button {
+      font-family: 'Times New Roman', Times, serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-slate-50 to-amber-50/30 text-slate-800 min-h-screen flex flex-col font-serif">
+
+  <div id="app" class="flex-1 flex flex-col">
+    <!-- Content rendered by JS -->
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+  <!-- Modal Pratinjau Berkas -->
+  <div id="file-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-emerald-100 transform transition-all">
+      <div class="bg-gradient-to-r from-mpq-900 to-mpq-800 p-5 text-white flex justify-between items-center border-b border-gold-500/30">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-gold-400">
+            <i class="fa-solid fa-file-shield text-xl"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base">Pratinjau Berkas Dokumen</h3>
+            <p class="text-xs text-emerald-200">Sistem Verifikasi LASKAR</p>
+          </div>
+        </div>
+        <button onclick="closeFileModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-emerald-200 hover:text-white transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 text-sm bg-slate-50/50">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+            <i class="fa-solid fa-file-pdf"></i>
+          </div>
+          <div class="overflow-hidden">
+            <p class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Nama Berkas Lampiran</p>
+            <p id="modal-file-name" class="font-bold text-slate-900 text-base truncate"></p>
+            <p class="text-xs text-emerald-600 font-bold mt-0.5"><i class="fa-solid fa-circle-check"></i> Status: Aman & Terverifikasi</p>
+          </div>
+        </div>
+
+        <div id="modal-preview-container" class="bg-white p-6 rounded-2xl border border-slate-200/80 text-center space-y-2 shadow-sm">
+          <!-- Konten pratinjau dinamis -->
+        </div>
+      </div>
+      <div class="bg-white px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+        <button onclick="closeFileModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
+          Tutup
+        </button>
+        <button onclick="simulateDownload()" class="px-5 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-mpq-900/20">
+          <i class="fa-solid fa-download"></i> Unduh / Buka Berkas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Notifikasi Email (Khusus Pencairan Dana) -->
+  <div id="email-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+      <div class="bg-gradient-to-r from-mpq-900 to-mpq-800 p-5 text-white flex justify-between items-center border-b border-gold-500/30">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-gold-400">
+            <i class="fa-solid fa-paper-plane text-lg"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base">Notifikasi Pencairan Dana</h3>
+            <p class="text-xs text-emerald-200">Konfirmasi Email Pengajuan Mahasiswa</p>
+          </div>
+        </div>
+        <button onclick="closeEmailModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-emerald-200 hover:text-white transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 text-sm">
+        <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 space-y-1.5">
+          <p><span class="font-bold text-slate-500">Penerima:</span> <span id="email-modal-to" class="text-slate-900 font-bold"></span></p>
+          <p><span class="font-bold text-slate-500">Subjek:</span> <span id="email-modal-subject" class="font-bold text-mpq-900"></span></p>
+          <p class="text-xs text-slate-400 flex items-center gap-1.5 pt-1.5 border-t border-emerald-200/60">
+            <i class="fa-solid fa-clock"></i> <span id="email-modal-time"></span>
+          </p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Pratinjau Pesan:</p>
+          <div id="email-modal-body" class="text-sm text-slate-700 bg-white p-4 rounded-2xl border border-slate-200 shadow-inner leading-relaxed space-y-2"></div>
+        </div>
+      </div>
+      <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+        <button onclick="closeEmailModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
+          Batal
+        </button>
+        <button id="btn-send-real-email" onclick="executeSendEmail()" class="px-5 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-mpq-900/20">
+          <i class="fa-solid fa-paper-plane"></i> Kirim Email Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MPQ_LOGO_HTML = `<img src="logo-mpq.png" alt="Logo MPQ UMS" class="w-full h-full object-contain" onError="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-book-quran text-mpq-900 text-2xl\'></i>';" />`;
+
+    const ACCOUNTS = [
+      { email: 'dmphjuara@gmail.com', pass: 'dmphjuara45!', name: "DMPH(Sekretariat)", nim: "PENGURUS-DMPH", role: 'dmph' }
+    ];
+
+    let sessionToken = localStorage.getItem('LASKAR_SESSION_TOKEN') || null;
+    let currentUser = null; 
+    let currentTab = 'form'; 
+    let teamMembers = [];
+    let pendingEmailData = null;
+    let submissions = [];
+    let currentActiveFile = null;
+
+    function createEncryptedToken(user) {
+      const payload = {
+        email: user.email,
+        role: user.role,
+        exp: Date.now() + (8 * 60 * 60 * 1000),
+        hash: btoa(user.email + ':' + user.role + ':' + Date.now())
+      };
+      return btoa(JSON.stringify(payload));
+    }
+
+    function verifyAndLoadSession() {
+      if (!sessionToken) {
+        currentUser = null;
+        return;
+      }
+      try {
+        const decoded = JSON.parse(atob(sessionToken));
+        if (decoded.exp < Date.now()) {
+          sessionToken = null;
+          localStorage.removeItem('LASKAR_SESSION_TOKEN');
+          currentUser = null;
+          showToast('Sesi Berakhir', 'Sesi login Anda telah kadaluarsa. Silakan masuk kembali.', 'error');
+          return;
+        }
+        
+        let account = ACCOUNTS.find(a => a.email.toLowerCase() === decoded.email.toLowerCase() && a.role === decoded.role);
+        if (!account && decoded.email.endsWith('@student.ums.ac.id')) {
+          const nimExtract = decoded.email.split('@')[0].toUpperCase();
+          account = {
+            email: decoded.email,
+            pass: '',
+            name: decoded.userName || `MAHASISWA (${nimExtract})`,
+            nim: nimExtract,
+            role: 'mahasiswa'
+          };
+        }
+        currentUser = account || null;
+      } catch (e) {
+        sessionToken = null;
+        currentUser = null;
+      }
+    }
+
+    function renderApp() {
+      verifyAndLoadSession();
+      const app = document.getElementById('app');
+      
+      if (!currentUser) {
+        app.innerHTML = renderLoginScreen();
+        return;
+      }
+
+      if (currentUser.role === 'mahasiswa' && currentTab === 'dmph_review') {
+        currentTab = 'form';
+      } else if (currentUser.role === 'dmph' && currentTab !== 'dmph_review') {
+        currentTab = 'dmph_review';
+      }
+
+      app.innerHTML = `
+        <header class="bg-gradient-to-r from-mpq-900 via-mpq-800 to-emerald-950 text-white shadow-xl border-b-4 border-gold-500 sticky top-0 z-40 backdrop-blur-md">
+          <div class="max-w-7xl mx-auto px-6 py-3.5 flex justify-between items-center">
+            <div class="flex items-center space-x-3.5">
+              <div class="w-12 h-12 bg-white p-1 rounded-2xl shadow-md flex-shrink-0 flex items-center justify-center border-2 border-gold-400 overflow-hidden">
+                ${MPQ_LOGO_HTML}
+              </div>
+              <div>
+                <h1 class="font-bold text-2xl tracking-wide text-white drop-shadow-sm">LASKAR</h1>
+                <p class="text-xs text-emerald-200 italic font-medium">Sistem Layanan Pengajuan Insentif & Lomba</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+              <div class="hidden sm:flex flex-col text-right">
+                <span class="text-sm font-bold text-white">${currentUser.name}</span>
+                <span class="text-xs text-gold-400 font-medium">${currentUser.role === 'dmph' ? 'Otoritas DMPH' : currentUser.nim}</span>
+              </div>
+              <div class="h-8 w-px bg-emerald-700/60"></div>
+              <button onclick="handleLogout()" class="px-3.5 py-2 bg-red-600/90 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center space-x-1.5">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="hidden sm:inline">Keluar</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto">
+          <aside class="w-full md:w-72 bg-white/80 backdrop-blur-md text-slate-700 flex-shrink-0 border-r border-slate-200/80 flex flex-col p-4 shadow-sm">
+            <div class="space-y-4">
+              <div class="bg-gradient-to-br from-emerald-900 to-mpq-900 text-white rounded-2xl p-4 shadow-md border border-emerald-700/50 flex items-center space-x-3.5">
+                <div class="w-10 h-10 rounded-xl bg-gold-500/20 flex items-center justify-center text-gold-400 text-lg border border-gold-400/30">
+                  <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="text-xs">
+                  <p class="font-bold uppercase tracking-wider text-emerald-200">Sesi Aktif</p>
+                  <p class="text-slate-100 font-bold mt-0.5">Role: <span class="text-gold-400">${currentUser.role.toUpperCase()}</span></p>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">Navigasi Menu</p>
+                <div class="space-y-1.5">
+                  ${currentUser.role === 'mahasiswa' ? `
+                    <button onclick="switchTab('form')" class="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-between ${currentTab === 'form' ? 'bg-mpq-800 text-gold-400 shadow-md shadow-mpq-900/10' : 'hover:bg-slate-100 text-slate-600'}">
+                      <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-file-pen text-base"></i>
+                        <span>Form Pengajuan</span>
+                      </div>
+                    </button>
+                    <button onclick="switchTab('history')" class="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-between ${currentTab === 'history' ? 'bg-mpq-800 text-gold-400 shadow-md shadow-mpq-900/10' : 'hover:bg-slate-100 text-slate-600'}">
+                      <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-clock-rotate-left text-base"></i>
+                        <span>Riwayat Saya</span>
+                      </div>
+                    </button>
+                    <button onclick="switchTab('statistics')" class="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-between ${currentTab === 'statistics' ? 'bg-mpq-800 text-gold-400 shadow-md shadow-mpq-900/10' : 'hover:bg-slate-100 text-slate-600'}">
+                      <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-chart-pie text-base"></i>
+                        <span>Statistik & Grafik</span>
+                      </div>
+                    </button>
+                  ` : ''}
+
+                  ${currentUser.role === 'dmph' ? `
+                    <button onclick="switchTab('dmph_review')" class="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-between ${currentTab === 'dmph_review' ? 'bg-mpq-800 text-gold-400 shadow-md shadow-mpq-900/10' : 'hover:bg-slate-100 text-slate-600'}">
+                      <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-list-check text-base"></i>
+                        <span>Review Semua Pengajuan</span>
+                      </div>
+                      <span class="bg-gold-500 text-mpq-900 text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">${submissions.length}</span>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-auto pt-6 px-2 text-xs text-slate-400 space-y-1 border-t border-slate-200/60 mt-6">
+              <p class="font-bold text-slate-600">LASKAR</p>
+              <p class="text-[11px] leading-relaxed text-slate-500">
+                "Sistem Layanan Apresiasi Prestasi & Administrasi Anggota KSQ Universitas Muhammadiyah Surakarta".
+              </p>
+            </div>
+          </aside>
+
+          <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+            ${renderMainContent()}
+          </main>
+        </div>
+      `;
+    }
+
+    function renderLoginScreen() {
+      return `
+        <div class="min-h-screen bg-gradient-to-br from-slate-900 via-mpq-950 to-emerald-950 flex items-center justify-center p-4">
+          <div class="max-w-md w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-emerald-500/20">
+            <div class="bg-gradient-to-r from-mpq-900 to-mpq-800 p-8 text-center border-b-4 border-gold-500 relative">
+              <div class="w-20 h-20 bg-white p-1 rounded-2xl shadow-lg mx-auto mb-3.5 flex items-center justify-center border-2 border-gold-400 overflow-hidden transform hover:scale-105 transition duration-300">
+                ${MPQ_LOGO_HTML}
+              </div>
+              <h2 class="text-2xl font-bold tracking-wide text-white">LASKAR</h2>
+              <p class="text-emerald-200 text-xs mt-1.5 italic font-medium">Sistem Layanan Pengajuan Insentif & Lomba</p>
+            </div>
+
+            <div class="p-8 space-y-5">
+              <form onsubmit="handleLoginSubmit(event)" class="space-y-4.5">
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 mb-1.5">Email</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <i class="fa-solid fa-envelope"></i>
+                    </span>
+                    <input type="email" id="login-email" required oninput="handleEmailInput(this.value)" class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-mpq-600 focus:bg-white outline-none transition shadow-inner" placeholder="Email @student.ums.ac.id">
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-1.5 pl-1" id="email-hint">Masukkan email Anda untuk melanjutkan.</p>
+                </div>
+
+                <div id="password-group">
+                  <label class="block text-sm font-bold text-slate-700 mb-1.5">Kata Sandi</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" id="login-password" required class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50/50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-mpq-600 focus:bg-white outline-none transition shadow-inner" placeholder="••••••••">
+                  </div>
+                </div>
+
+                <button type="submit" id="btn-login-submit" class="w-full py-3 bg-gradient-to-r from-mpq-800 to-mpq-900 hover:from-mpq-900 hover:to-emerald-950 text-white font-bold rounded-2xl text-sm transition shadow-lg shadow-mpq-900/30 flex items-center justify-center space-x-2 transform hover:-translate-y-0.5">
+                  <i class="fa-solid fa-right-to-bracket text-xs"></i>
+                  <span id="btn-login-text">Masuk Sesi</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleEmailInput(val) {
+      const email = val.trim().toLowerCase();
+      const pwdGroup = document.getElementById('password-group');
+      const pwdInput = document.getElementById('login-password');
+      const btnText = document.getElementById('btn-login-text');
+      const hint = document.getElementById('email-hint');
+
+      if (email.endsWith('@student.ums.ac.id')) {
+        pwdGroup.style.display = 'none';
+        pwdInput.removeAttribute('required');
+        btnText.innerText = 'Masuk Tanpa Sandi';
+        hint.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Domain Student UMS Aktif (Tanpa Sandi).</span>`;
+      } else {
+        pwdGroup.style.display = 'block';
+        pwdInput.setAttribute('required', 'true');
+        btnText.innerText = 'Masuk Sesi';
+        hint.innerText = 'Email umum wajib menggunakan kata sandi.';
+      }
+    }
+
+    function renderMainContent() {
+      if (currentUser.role === 'mahasiswa') {
+        if (currentTab === 'form') return renderFormSubmission();
+        if (currentTab === 'history') return renderHistoryView();
+        if (currentTab === 'statistics') return renderStatisticsView();
+      } else if (currentUser.role === 'dmph') {
+        return renderDmphAdminView();
+      }
+      return `<div class="p-4 text-red-600">Akses Tidak Diberikan</div>`;
+    }
+
+    function renderFormSubmission() {
+      return `
+        <div class="max-w-4xl mx-auto space-y-6">
+          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
+                <i class="fa-solid fa-file-pen text-gold-500 text-lg"></i> Form Pengajuan LASKAR 
+              </h2>
+              <p class="text-xs text-slate-500 mt-1">Silakan isi formulir pengajuan insentif, subsidi, atau transportasi dengan lengkap dan benar.</p>
+            </div>
+            <button onclick="switchTab('history')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-bold transition flex items-center gap-2 border border-slate-200">
+              <i class="fa-solid fa-clock-rotate-left"></i> Lihat Riwayat Saya
+            </button>
+          </div>
+
+          <form onsubmit="handleFormSubmit(event)" class="bg-white rounded-3xl shadow-sm border border-slate-200/80 divide-y divide-slate-100 overflow-hidden">
+            <div class="p-6 space-y-4">
+              <h3 class="text-sm font-bold text-mpq-800 uppercase tracking-wide flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <span class="w-7 h-7 rounded-xl bg-emerald-100 text-mpq-900 flex items-center justify-center text-xs font-bold">1</span> Identitas Pemohon
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200/60">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap Mahasiswa <span class="text-red-600">*</span></label>
+                  <input type="text" id="formNamaMahasiswa" required value="${currentUser.name.includes('MAHASISWA (') ? '' : currentUser.name}" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-mpq-600 outline-none shadow-sm" placeholder="Masukkan Nama Lengkap Anda">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">NIM</label>
+                  <input type="text" value="${currentUser.nim}" readonly class="w-full px-3.5 py-2 text-sm bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600 cursor-not-allowed">
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <h3 class="text-sm font-bold text-mpq-800 uppercase tracking-wide flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <span class="w-7 h-7 rounded-xl bg-emerald-100 text-mpq-900 flex items-center justify-center text-xs font-bold">2</span> Detail Perlombaan & Kategori
+              </h3>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2 bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/60">
+                  <label class="block text-xs font-bold text-mpq-900 mb-1.5 uppercase">Jenis Ajuan <span class="text-red-600">*</span></label>
+                  <select id="jenisAjuan" onchange="handleJenisAjuanChange(this.value)" required class="w-full px-3.5 py-2.5 text-sm border border-emerald-300 rounded-xl outline-none bg-white font-bold text-mpq-900 shadow-sm">
+                    <option value="">-- Pilih Jenis Ajuan --</option>
+                    <option value="Insentif">Insentif Prestasi Lomba</option>
+                    <option value="Subsidi">Subsidi Pendaftaran Lomba</option>
+                    <option value="Transportasi">Transportasi / Akomodasi Lomba</option>
+                    <option value="Apresiasi/Non-Juara">Apresiasi / Non-Juara (Peserta Lomba)</option>
+                  </select>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Nama Event Lomba <span class="text-red-600">*</span></label>
+                  <input type="text" id="namaEvent" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none focus:border-mpq-700 shadow-sm" placeholder="Contoh: Musabaqah Tilawatil Qur'an Mahasiswa Nasional 2026">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Nama Cabang Lomba <span class="text-slate-400 font-normal">(opsional)</span></label>
+                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: Hifzhil 10 Juz">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Level Kompetisi <span class="text-red-600">*</span></label>
+                  <select id="level" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white shadow-sm">
+                    <option value="">-- Pilih Level --</option>
+                    <option value="Lokal">Lokal (Internal / Fakultas)</option>
+                    <option value="Regional">Regional (Wilayah / Provinsi)</option>
+                    <option value="Nasional">Nasional</option>
+                    <option value="Internasional">Internasional</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Penyelenggara <span class="text-red-600">*</span></label>
+                  <input type="text" id="penyelenggara" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Nama instansi penyelenggara">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Jumlah Peserta / Instansi <span class="text-red-600">*</span></label>
+                  <input type="number" id="jumlahPeserta" min="1" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Jumlah total peserta">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Jenis Kompetisi <span class="text-red-600">*</span></label>
+                  <select id="jenisKompetisi" onchange="toggleTeamFields(this.value)" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white shadow-sm">
+                    <option value="Individu">Individu / Perorangan</option>
+                    <option value="Kelompok/Tim">Kelompok / Tim</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Capaian / Hasil Lomba <span class="text-red-600">*</span></label>
+                  <select id="juara" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white shadow-sm">
+                    <option value="">-- Pilih Capaian --</option>
+                    <option value="Juara 1">Juara 1</option>
+                    <option value="Juara 2">Juara 2</option>
+                    <option value="Juara 3">Juara 3</option>
+                    <option value="Juara Harapan">Juara Harapan</option>
+                    <option value="Finalis">Finalis</option>
+                    <option value="Peserta/Delegasi">Peserta / Delegasi (Non-Juara)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="team-section" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 mt-3">
+                <p class="text-xs font-bold text-slate-700 uppercase">Detail Kelompok / Tim</p>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Tim / Kelompok</label>
+                  <input type="text" id="namaTim" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Contoh: Tim Syahril Qur'an UMS">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Daftar Anggota Tim</label>
+                  <div class="flex gap-2 mb-2">
+                    <input type="text" id="memberInput" class="flex-1 px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Nama Anggota (NIM)">
+                    <button type="button" onclick="addTeamMember()" class="px-4 py-2 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                      + Tambah
+                    </button>
+                  </div>
+                  <div id="member-list" class="flex flex-wrap gap-2">
+                    ${teamMembers.map((m, idx) => `
+                      <span class="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold shadow-sm">
+                        ${m}
+                        <button type="button" onclick="removeTeamMember(${idx})" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-xmark"></i></button>
+                      </span>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bagian Rekening (Bisa Tersembunyi Otomatis) -->
+            <div id="rekening-section" class="p-6 space-y-4">
+              <h3 class="text-sm font-bold text-mpq-800 uppercase tracking-wide flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <span class="w-7 h-7 rounded-xl bg-emerald-100 text-mpq-900 flex items-center justify-center text-xs font-bold">3</span> Rekening / E-Wallet Pencairan
+              </h3>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200/60">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Pilihan Bank / E-Wallet <span class="text-red-600">*</span></label>
+                  <select id="rekeningProvider" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
+                    <option value="">-- Pilih Provider --</option>
+                    <option value="GoPay">GoPay</option>
+                    <option value="DANA">DANA</option>
+                    <option value="ShopeePay">ShopeePay</option>
+                    <option value="BSI">Bank Syariah Indonesia (BSI)</option>
+                    <option value="BNI">Bank Negara Indonesia (BNI)</option>
+                    <option value="SeaBank">SeaBank</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Nomor Rekening / HP (a.n Pemohon) <span class="text-red-600">*</span></label>
+                  <input type="text" id="nomorRekening" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Nomor rekening / Handphone">
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <h3 class="text-sm font-bold text-mpq-800 uppercase tracking-wide flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <span class="w-7 h-7 rounded-xl bg-emerald-100 text-mpq-900 flex items-center justify-center text-xs font-bold" id="berkas-step-num">4</span> Upload Berkas Bukti Kejuaraan / Keikutsertaan
+              </h3>
+
+              <div class="border-2 border-dashed border-emerald-300 rounded-2xl p-8 text-center hover:bg-emerald-50/40 transition relative bg-slate-50/40">
+                <input type="file" id="sertifikatFile" accept=".pdf,.png,.jpg,.jpeg" required onchange="handleFileSelect(event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <p id="file-label" class="text-sm font-bold text-slate-800">Klik atau seret berkas bukti kejuaraan / sertifikat di sini</p>
+                <p class="text-xs text-slate-400 mt-1">Format yang didukung: PDF, JPG, atau PNG (Maks. 5 MB)</p>
+              </div>
+            </div>
+
+            <div class="p-6 bg-slate-50/80 rounded-b-3xl flex justify-end gap-3 border-t border-slate-100">
+              <button type="button" onclick="switchTab('history')" class="px-5 py-2.5 bg-slate-200/80 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
+                Batal
+              </button>
+              <button type="submit" class="px-6 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-mpq-900/20 flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i> Kirim Form Pengajuan
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+    }
+
+    function handleJenisAjuanChange(value) {
+      const rekeningSection = document.getElementById('rekening-section');
+      const rekProvider = document.getElementById('rekeningProvider');
+      const rekNomor = document.getElementById('nomorRekening');
+      const berkasNum = document.getElementById('berkas-step-num');
+
+      if (value === 'Apresiasi/Non-Juara') {
+        rekeningSection.classList.add('hidden');
+        rekProvider.removeAttribute('required');
+        rekNomor.removeAttribute('required');
+        if (berkasNum) berkasNum.innerText = '3';
+      } else {
+        rekeningSection.classList.remove('hidden');
+        rekProvider.setAttribute('required', 'true');
+        rekNomor.setAttribute('required', 'true');
+        if (berkasNum) berkasNum.innerText = '4';
+      }
+    }
+
+    function renderHistoryView() {
+      const mySubmissions = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
+
+      return `
+        <div class="max-w-5xl mx-auto space-y-6">
+          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
+                <i class="fa-solid fa-clock-rotate-left text-mpq-700 text-lg"></i> Riwayat Pengajuan Saya
+              </h2>
+              <p class="text-xs text-slate-500 mt-1">Daftar pengajuan aktif atas akun: <strong class="text-mpq-800 font-mono">${currentUser.email}</strong></p>
+            </div>
+            <button onclick="switchTab('form')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-mpq-900/20 flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i> Buat Ajuan Baru
+            </button>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-800 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-700">
+                    <th class="py-3.5 px-5">ID / Tanggal</th>
+                    <th class="py-3.5 px-5">Jenis Ajuan</th>
+                    <th class="py-3.5 px-5">Event Lomba</th>
+                    <th class="py-3.5 px-5">Capaian</th>
+                    <th class="py-3.5 px-5">Rekening Target</th>
+                    <th class="py-3.5 px-5">Status Review</th>
+                    <th class="py-3.5 px-5">Status Dana</th>
+                    <th class="py-3.5 px-5 text-center">Berkas</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-xs">
+                  ${mySubmissions.length === 0 ? `
+                    <tr>
+                      <td colspan="8" class="py-16 text-center text-slate-400">
+                        <div class="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
+                          <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        Belum ada riwayat pengajuan. Klik "Buat Ajuan Baru" untuk memulai.
+                      </td>
+                    </tr>
+                  ` : mySubmissions.map((sub) => `
+                    <tr class="hover:bg-slate-50/80 transition">
+                      <td class="py-4 px-5 font-mono font-bold text-mpq-800">
+                        ${sub.id}
+                        <p class="text-[10px] text-slate-400 font-sans font-normal mt-0.5">${sub.createdAt}</p>
+                      </td>
+                      <td class="py-4 px-5">
+                        <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                          ${sub.jenisAjuan || 'Insentif'}
+                        </span>
+                      </td>
+                      <td class="py-4 px-5">
+                        <p class="font-bold text-slate-900">${sub.namaEvent}</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">${sub.namaCabang ? sub.namaCabang + ' • ' : ''}${sub.penyelenggara}</p>
+                      </td>
+                      <td class="py-4 px-5">
+                        <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200 mb-1">
+                          ${sub.juara}
+                        </span>
+                        <p class="text-[10px] text-slate-500">${sub.level}</p>
+                      </td>
+                      <td class="py-4 px-5">
+                        ${sub.rekeningProvider ? `
+                          <span class="text-[11px] font-bold text-slate-800">${sub.rekeningProvider}</span>
+                          <p class="text-[11px] font-mono text-slate-500 mt-0.5">${sub.nomorRekening}</p>
+                        ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
+                      </td>
+                      <td class="py-4 px-5">
+                        ${renderBadgeReview(sub.statusReview)}
+                      </td>
+                      <td class="py-4 px-5">
+                        ${renderBadgeDana(sub.statusDana)}
+                      </td>
+                      <td class="py-4 px-5 text-center">
+                        <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-mpq-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-slate-200">
+                          <i class="fa-solid fa-file-pdf text-red-600"></i> Lihat
+                        </button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // FUNGSI TAB BARU: STATISTIK & GRAFIK PRESTASI
+    function renderStatisticsView() {
+      const mySubs = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
+      
+      const totalAjuan = mySubs.length;
+      const totalJuara1 = mySubs.filter(s => s.juara === 'Juara 1').length;
+      const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2').length;
+      const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3').length;
+      const totalLainnya = totalAjuan - (totalJuara1 + totalJuara2 + totalJuara3);
+
+      const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
+      const daparProses = mySubs.filter(s => s.statusDana === 'Disetujui').length;
+      const belumProses = mySubs.filter(s => s.statusDana === 'Belum Diproses').length;
+
+      return `
+        <div class="max-w-5xl mx-auto space-y-6">
+          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
+                <i class="fa-solid fa-chart-pie text-gold-500 text-lg"></i> Statistik & Grafik Prestasi Saya
+              </h2>
+              <p class="text-xs text-slate-500 mt-1">Ringkasan capaian dan rekapitulasi data pengajuan akun: <strong class="text-mpq-800 font-mono">${currentUser.email}</strong></p>
+            </div>
+            <button onclick="switchTab('form')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-mpq-900/20 flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i> Buat Ajuan Baru
+            </button>
+          </div>
+
+          <!-- Metric Cards Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-xl font-bold shadow-inner">
+                <i class="fa-solid fa-file-invoice"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 font-bold uppercase">Total Pengajuan</p>
+                <p class="text-2xl font-bold text-slate-900">${totalAjuan}</p>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+              <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl font-bold shadow-inner">
+                <i class="fa-solid fa-trophy"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 font-bold uppercase">Total Juara 1</p>
+                <p class="text-2xl font-bold text-slate-900">${totalJuara1}</p>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+              <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center text-xl font-bold shadow-inner">
+                <i class="fa-solid fa-medal"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 font-bold uppercase">Juara 2 & 3</p>
+                <p class="text-2xl font-bold text-slate-900">${totalJuara2 + totalJuara3}</p>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
+              <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center text-xl font-bold shadow-inner">
+                <i class="fa-solid fa-money-bill-wave"></i>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 font-bold uppercase">Dana Dicairkan</p>
+                <p class="text-2xl font-bold text-slate-900">${danaCair}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visual Breakdown Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+              <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fa-solid fa-chart-column text-mpq-800"></i> Distribusi Capaian Lomba
+              </h3>
+              <div class="space-y-3 pt-2">
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Juara 1</span><span>${totalJuara1} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-amber-500 h-full rounded-full" style="width: ${totalAjuan ? (totalJuara1/totalAjuan)*100 : 0}%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Juara 2</span><span>${totalJuara2} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-slate-400 h-full rounded-full" style="width: ${totalAjuan ? (totalJuara2/totalAjuan)*100 : 0}%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Juara 3</span><span>${totalJuara3} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-amber-700 h-full rounded-full" style="width: ${totalAjuan ? (totalJuara3/totalAjuan)*100 : 0}%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Finalis / Peserta / Non-Juara</span><span>${totalLainnya} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-emerald-600 h-full rounded-full" style="width: ${totalAjuan ? (totalLainnya/totalAjuan)*100 : 0}%"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+              <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fa-solid fa-circle-check text-mpq-800"></i> Status Pemrosesan Dana
+              </h3>
+              <div class="space-y-3 pt-2">
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Dana Dicairkan</span><span>${danaCair} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-mpq-800 h-full rounded-full" style="width: ${totalAjuan ? (danaCair/totalAjuan)*100 : 0}%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Disetujui (Menunggu Pencairan)</span><span>${daparProses} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-blue-600 h-full rounded-full" style="width: ${totalAjuan ? (daparProses/totalAjuan)*100 : 0}%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-1"><span>Belum Diproses</span><span>${belumProses} Pengajuan</span></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-slate-300 h-full rounded-full" style="width: ${totalAjuan ? (belumProses/totalAjuan)*100 : 0}%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDmphAdminView() {
+      return `
+        <div class="max-w-7xl mx-auto space-y-6">
+          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
+                <i class="fa-solid fa-user-shield text-gold-500 text-lg"></i> Panel Review DMPH MPQ
+              </h2>
+              <p class="text-xs text-slate-500 mt-1">Otoritas peninjauan dan verifikasi pengajuan seluruh mahasiswa.</p>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-2xl text-xs text-emerald-900 font-bold flex items-center gap-2">
+              <i class="fa-solid fa-database text-emerald-600"></i>
+              <span>Total Seluruh Pengajuan: ${submissions.length}</span>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5">Cari Nama / NIM / Event</label>
+              <input type="text" id="adminSearch" onkeyup="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-mpq-700 shadow-sm" placeholder="Ketik kata kunci...">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Status Review</label>
+              <select id="adminFilterReview" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
+                <option value="ALL">Semua Status Review</option>
+                <option value="Sudah Direview">Sudah Direview</option>
+                <option value="Perlu Revisi">Perlu Revisi</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Status Dana</label>
+              <select id="adminFilterDana" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
+                <option value="ALL">Semua Status Dana</option>
+                <option value="Belum Diproses">Belum Diproses</option>
+                <option value="Disetujui">Disetujui</option>
+                <option value="Dana Dicairkan">Dana Dicairkan</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse" id="admin-table">
+                <thead>
+                  <tr class="bg-mpq-900 text-white text-xs font-bold uppercase tracking-wider">
+                    <th class="py-3.5 px-5">Pengusul & Event</th>
+                    <th class="py-3.5 px-5">Jenis Ajuan</th>
+                    <th class="py-3.5 px-5">Capaian</th>
+                    <th class="py-3.5 px-5">Rekening Tujuan</th>
+                    <th class="py-3.5 px-5">Berkas</th>
+                    <th class="py-3.5 px-5">Aksi Review</th>
+                    <th class="py-3.5 px-5">Aksi Dana</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-xs">
+                  ${submissions.length === 0 ? `
+                    <tr>
+                      <td colspan="7" class="py-16 text-center text-slate-400">
+                        Belum ada berkas atau data pengajuan yang masuk ke sistem DMPH.
+                      </td>
+                    </tr>
+                  ` : submissions.map((sub) => `
+                    <tr class="hover:bg-slate-50/80 transition submission-row" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()}" data-review="${sub.statusReview}" data-dana="${sub.statusDana}">
+                      <td class="py-4 px-5">
+                        <p class="font-bold text-slate-900 text-sm">${sub.pengusulName}</p>
+                        <p class="text-[11px] font-mono text-slate-500">${sub.pengusulNim}</p>
+                        <p class="font-bold text-xs text-mpq-800 mt-1">${sub.namaEvent}</p>
+                      </td>
+
+                      <td class="py-4 px-5">
+                        <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                          ${sub.jenisAjuan || 'Insentif'}
+                        </span>
+                      </td>
+
+                      <td class="py-4 px-5">
+                        <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
+                          ${sub.juara}
+                        </span>
+                        <p class="text-[10px] text-slate-500">${sub.level}</p>
+                      </td>
+
+                      <td class="py-4 px-5">
+                        ${sub.rekeningProvider ? `
+                          <span class="font-bold text-slate-900">${sub.rekeningProvider}</span>
+                          <p class="text-xs font-mono text-slate-500 mt-0.5">${sub.nomorRekening}</p>
+                        ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
+                      </td>
+
+                      <td class="py-4 px-5">
+                        <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+                          <i class="fa-solid fa-file-pdf text-red-600"></i> Cek Berkas
+                        </button>
+                      </td>
+
+                      <td class="py-4 px-5 space-y-2">
+                        ${renderBadgeReview(sub.statusReview)}
+                        <div>
+                          <select onchange="updateReviewStatus('${sub.id}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
+                            <option value="Sudah Direview" ${sub.statusReview === 'Sudah Direview' ? 'selected' : ''}>Sudah Direview</option>
+                            <option value="Perlu Revisi" ${sub.statusReview === 'Perlu Revisi' ? 'selected' : ''}>Perlu Revisi</option>
+                          </select>
+                        </div>
+                      </td>
+
+                      <td class="py-4 px-5 space-y-2">
+                        ${renderBadgeDana(sub.statusDana)}
+                        <div>
+                          <select onchange="updateDanaStatus('${sub.id}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
+                            <option value="Belum Diproses" ${sub.statusDana === 'Belum Diproses' ? 'selected' : ''}>Belum Diproses</option>
+                            <option value="Disetujui" ${sub.statusDana === 'Disetujui' ? 'selected' : ''}>Disetujui</option>
+                            <option value="Dana Dicairkan" ${sub.statusDana === 'Dana Dicairkan' ? 'selected' : ''}>Dana Dicairkan</option>
+                          </select>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBadgeReview(status) {
+      if (status === 'Sudah Direview' || status === 'Disetujui') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
+      } else if (status === 'Perlu Revisi') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-200"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perlu Revisi</span>`;
+      }
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
+    }
+
+    function renderBadgeDana(status) {
+      if (status === 'Dana Dicairkan') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-mpq-800 text-white shadow-sm"><i class="fa-solid fa-money-bill-check text-gold-400"></i> Dana Dicairkan</span>`;
+      } else if (status === 'Disetujui') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-200"><i class="fa-solid fa-thumbs-up text-blue-600"></i> Disetujui</span>`;
+      }
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200"><i class="fa-solid fa-clock text-slate-400"></i> Belum Diproses</span>`;
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const emailInput = document.getElementById('login-email').value.trim().toLowerCase();
+      const passInput = document.getElementById('login-password') ? document.getElementById('login-password').value.trim() : '';
+
+      if (!emailInput) {
+        showToast('Login Gagal', 'Email wajib diisi!', 'error');
+        return;
+      }
+
+      if (emailInput.endsWith('@student.ums.ac.id')) {
+        const nimExtract = emailInput.split('@')[0].toUpperCase();
+        
+        let account = ACCOUNTS.find(a => a.email.toLowerCase() === emailInput);
+        if (!account) {
+          account = {
+            email: emailInput,
+            pass: '',
+            name: `MAHASISWA (${nimExtract})`,
+            nim: nimExtract,
+            role: 'mahasiswa'
+          };
+          ACCOUNTS.push(account);
+        }
+
+        sessionToken = createEncryptedToken(account);
+        localStorage.setItem('LASKAR_SESSION_TOKEN', sessionToken);
+        currentUser = account;
+        currentTab = 'form';
+        showToast('Login Berhasil', `Selamat datang! Silakan isi formulir pengajuan.`, 'success');
+        renderApp();
+        return;
+      }
+
+      if (!passInput) {
+        showToast('Login Gagal', 'Kata sandi wajib diisi untuk email ini!', 'error');
+        return;
+      }
+
+      let account = ACCOUNTS.find(a => a.email.toLowerCase() === emailInput);
+      if (account && account.pass === passInput) {
+        sessionToken = createEncryptedToken(account);
+        localStorage.setItem('LASKAR_SESSION_TOKEN', sessionToken);
+        currentUser = account;
+        currentTab = account.role === 'dmph' ? 'dmph_review' : 'form';
+        showToast('Login Berhasil', `Selamat datang, ${currentUser.name}!`, 'success');
+        renderApp();
+      } else {
+        showToast('Login Gagal', 'Email atau kata sandi tidak sesuai!', 'error');
+      }
+    }
+
+    function handleLogout() {
+      sessionToken = null;
+      currentUser = null;
+      localStorage.removeItem('LASKAR_SESSION_TOKEN');
+      showToast('Logout Selesai', 'Anda telah keluar dari sesi LASKAR.', 'info');
+      renderApp();
+    }
+
+    function switchTab(tab) {
+      if (currentUser.role === 'mahasiswa' && tab === 'dmph_review') return;
+      currentTab = tab;
+      renderApp();
+    }
+
+    function toggleTeamFields(value) {
+      const section = document.getElementById('team-section');
+      if (value === 'Kelompok/Tim') {
+        section.classList.remove('hidden');
+      } else {
+        section.classList.add('hidden');
+      }
+    }
+
+    function addTeamMember() {
+      const input = document.getElementById('memberInput');
+      const val = input.value.trim();
+      if (val) {
+        teamMembers.push(val);
+        input.value = '';
+        renderApp();
+      }
+    }
+
+    function removeTeamMember(idx) {
+      teamMembers.splice(idx, 1);
+      renderApp();
+    }
+
+    let selectedFileName = '';
+    let selectedFileUrl = '';
+    
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files.length > 0) {
+        const file = files[0];
+        selectedFileName = file.name;
+        
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          selectedFileUrl = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        document.getElementById('file-label').innerHTML = `<span class="text-mpq-800 font-bold"><i class="fa-solid fa-file-pdf"></i> Terpilih: ${selectedFileName}</span>`;
+      }
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const namaManual = document.getElementById('formNamaMahasiswa').value.trim();
+      if (namaManual) {
+        currentUser.name = namaManual;
+      }
+
+      const jenis = document.getElementById('jenisAjuan').value;
+      const isNonRek = (jenis === 'Apresiasi/Non-Juara');
+
+      const newSub = {
+        id: 'LASKAR-' + (800 + submissions.length + 1),
+        userEmail: currentUser.email,
+        pengusulName: currentUser.name,
+        pengusulNim: currentUser.nim,
+        jenisAjuan: jenis,
+        namaEvent: document.getElementById('namaEvent').value,
+        namaCabang: document.getElementById('namaCabang').value,
+        level: document.getElementById('level').value,
+        jumlahPeserta: document.getElementById('jumlahPeserta').value,
+        jenisKompetisi: document.getElementById('jenisKompetisi').value,
+        juara: document.getElementById('juara').value,
+        namaTim: document.getElementById('namaTim') ? document.getElementById('namaTim').value : '',
+        anggotaTim: [...teamMembers],
+        penyelenggara: document.getElementById('penyelenggara').value,
+        rekeningProvider: isNonRek ? '' : (document.getElementById('rekeningProvider') ? document.getElementById('rekeningProvider').value : ''),
+        nomorRekening: isNonRek ? '' : (document.getElementById('nomorRekening') ? document.getElementById('nomorRekening').value : ''),
+        sertifikatName: selectedFileName || 'sertifikat_laskar.pdf',
+        fileUrl: selectedFileUrl || '',
+        statusReview: 'Sudah Direview',
+        statusDana: isNonRek ? 'Selesai' : 'Belum Diproses',
+        catatanAdmin: '',
+        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+      };
+
+      submissions.unshift(newSub);
+      teamMembers = [];
+      selectedFileName = '';
+      selectedFileUrl = '';
+
+      showToast('Pengajuan Berhasil!', 'Data pengajuan telah dicatat dalam sistem.', 'success');
+      currentTab = 'history';
+      renderApp();
+    }
+
+    function updateReviewStatus(id, newStatus) {
+      if (currentUser.role !== 'dmph') return;
+      const sub = submissions.find(s => s.id === id);
+      if (!sub) return;
+      sub.statusReview = newStatus;
+      showToast('Status Review Diperbarui', `Status review ${sub.id} menjadi: ${newStatus}`, 'info');
+      renderApp();
+    }
+
+    function updateDanaStatus(id, newStatus) {
+      if (currentUser.role !== 'dmph') return;
+      const sub = submissions.find(s => s.id === id);
+      if (!sub) return;
+      sub.statusDana = newStatus;
+      showToast('Status Dana Diperbarui', `Status dana ${sub.id} menjadi: ${newStatus}`, 'success');
+
+      triggerEmailNotification(
+        sub.userEmail,
+        `Pencairan Dana LASKAR: ${sub.namaEvent}`,
+        `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Status pencairan dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah diperbarui menjadi:<br><br><span style="color:#166534; font-weight:bold; font-size:15px;">" ${newStatus} "</span>`
+      );
+
+      renderApp();
+    }
+
+    function filterAdminTable() {
+      const search = document.getElementById('adminSearch').value.toLowerCase();
+      const reviewFilter = document.getElementById('adminFilterReview').value;
+      const danaFilter = document.getElementById('adminFilterDana').value;
+
+      const rows = document.querySelectorAll('.submission-row');
+      rows.forEach(row => {
+        const rowSearch = row.getAttribute('data-search');
+        const rowReview = row.getAttribute('data-review');
+        const rowDana = row.getAttribute('data-dana');
+
+        const matchSearch = rowSearch.includes(search);
+        const matchReview = reviewFilter === 'ALL' || rowReview === reviewFilter;
+        const matchDana = danaFilter === 'ALL' || rowDana === danaFilter;
+
+        if (matchSearch && matchReview && matchDana) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function triggerEmailNotification(toEmail, subject, htmlBody) {
+      pendingEmailData = { to_email: toEmail, subject: subject, message: htmlBody };
+      document.getElementById('email-modal-to').innerText = toEmail;
+      document.getElementById('email-modal-subject').innerText = subject;
+      document.getElementById('email-modal-body').innerHTML = htmlBody;
+      document.getElementById('email-modal-time').innerText = new Date().toLocaleString('id-ID');
+      document.getElementById('email-modal').classList.remove('hidden');
+    }
+
+    function executeSendEmail() {
+      if (!pendingEmailData) return;
+      const btn = document.getElementById('btn-send-real-email');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...`;
+
+      const SERVICE_ID = "Haloo Kami DMPH";
+      const TEMPLATE_ID = "template_tg4uugj";
+
+      if (typeof emailjs !== 'undefined') {
+        emailjs.send(SERVICE_ID, TEMPLATE_ID, pendingEmailData)
+          .then(function(response) {
+             showToast('Email Terkirim!', `Email berhasil dikirimkan ke ${pendingEmailData.to_email}`, 'success');
+             closeEmailModal();
+          }, function(error) {
+             showToast('Pengiriman Disimulasikan', 'Notifikasi dicatat secara lokal.', 'info');
+             closeEmailModal();
+          })
+          .finally(() => {
+             btn.disabled = false;
+             btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Email Sekarang`;
+          });
+      } else {
+        showToast('Simulasi Berhasil', `Notifikasi email disimulasikan ke ${pendingEmailData.to_email}`, 'info');
+        closeEmailModal();
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Email Sekarang`;
+      }
+    }
+
+    function closeEmailModal() {
+      document.getElementById('email-modal').classList.add('hidden');
+      pendingEmailData = null;
+    }
+
+    function viewFile(filename, fileUrl) {
+      currentActiveFile = { name: filename, url: fileUrl };
+      document.getElementById('modal-file-name').innerText = filename;
+      
+      const container = document.getElementById('modal-preview-container');
+      
+      if (fileUrl && fileUrl.startsWith('data:image/')) {
+        container.innerHTML = `<img src="${fileUrl}" class="max-h-60 mx-auto rounded-xl border shadow-sm object-contain">`;
+      } else if (fileUrl && fileUrl.startsWith('data:application/pdf')) {
+        container.innerHTML = `<iframe src="${fileUrl}" class="w-full h-60 rounded-xl border shadow-sm"></iframe>`;
+      } else {
+        container.innerHTML = `
+          <div class="py-6 space-y-2">
+            <i class="fa-solid fa-file-lines text-mpq-800 text-4xl"></i>
+            <p class="text-xs font-bold text-slate-700">Berkas Dokumen Lampiran</p>
+            <p class="text-[11px] text-slate-500">Klik tombol unduh di bawah untuk melihat dokumen asli.</p>
+          </div>
+        `;
+      }
+
+      document.getElementById('file-modal').classList.remove('hidden');
+    }
+
+    function simulateDownload() {
+      if (currentActiveFile && currentActiveFile.url) {
+        const a = document.createElement('a');
+        a.href = currentActiveFile.url;
+        a.download = currentActiveFile.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Unduhan Berhasil', `Mengunduh berkas: ${currentActiveFile.name}`, 'success');
+      } else {
+        showToast('Informasi Berkas', `Simulasi membuka dokumen: ${currentActiveFile ? currentActiveFile.name : 'Dokumen'}`, 'info');
+      }
+    }
+
+    function closeFileModal() {
+      document.getElementById('file-modal').classList.add('hidden');
+      currentActiveFile = null;
+    }
+
+    function showToast(title, message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let bg = 'bg-slate-900 text-white border border-slate-700 shadow-xl';
+      let icon = '<i class="fa-solid fa-circle-info text-sky-400"></i>';
+
+      if (type === 'success') {
+        bg = 'bg-mpq-900 text-emerald-100 border border-emerald-700 shadow-xl';
+        icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+      } else if (type === 'error') {
+        bg = 'bg-rose-950 text-rose-100 border border-rose-700 shadow-xl';
+        icon = '<i class="fa-solid fa-triangle-exclamation text-rose-400"></i>';
+      }
+
+      toast.className = `${bg} px-4 py-3 rounded-2xl pointer-events-auto flex items-start space-x-3 max-w-sm text-xs transition duration-300`;
+      toast.innerHTML = `
+        <div class="text-base mt-0.5">${icon}</div>
+        <div class="flex-1">
+          <p class="font-bold text-sm">${title}</p>
+          <p class="text-slate-200 mt-0.5">${message}</p>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    window.onload = function() {
+      renderApp();
+    };
+  </script>
+</body>
+</html>
