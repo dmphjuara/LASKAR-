@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LASKAR - MPQ </title>
+  <title>LASKAR - MPQ</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
@@ -187,7 +187,7 @@
     let currentTab = 'form'; 
     let teamMembers = [];
     let pendingEmailData = null;
-    let submissions = []; // Data dimuat dari cloud Firestore
+    let submissions = []; 
     let currentActiveFile = null;
 
     function createEncryptedToken(user) {
@@ -1189,14 +1189,14 @@
         currentTab = 'history';
         loadSubmissionsFromCloud();
       }).catch((error) => {
-        showToast('Gagal Menyimpan', 'Terjadi kesalahan jaringan.', 'error');
+        showToast('Gagal Menyimpan', 'Terjadi kesalahan jaringan atau izin database.', 'error');
       });
     }
 
     function updateReviewStatus(id, newStatus) {
       if (currentUser.role !== 'dmph') return;
       const sub = submissions.find(s => s.id === id);
-      if (!sub) return;
+      if (!sub || !sub.docId) return;
 
       db.collection("submissions").doc(sub.docId).update({ statusReview: newStatus }).then(() => {
         showToast('Status Review Diperbarui', `Status review ${sub.id} menjadi: ${newStatus}`, 'info');
@@ -1207,7 +1207,7 @@
     function updateDanaStatus(id, newStatus) {
       if (currentUser.role !== 'dmph') return;
       const sub = submissions.find(s => s.id === id);
-      if (!sub) return;
+      if (!sub || !sub.docId) return;
 
       db.collection("submissions").doc(sub.docId).update({ statusDana: newStatus }).then(() => {
         showToast('Status Dana Diperbarui', `Status dana ${sub.id} menjadi: ${newStatus}`, 'success');
@@ -1224,7 +1224,7 @@
 
     function deleteSubmission(id) {
       const sub = submissions.find(s => s.id === id);
-      if (!sub) return;
+      if (!sub || !sub.docId) return;
 
       if (confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')) {
         db.collection("submissions").doc(sub.docId).delete().then(() => {
@@ -1403,6 +1403,8 @@
         renderApp();
       }).catch((error) => {
         console.error("Gagal mengambil data dari Firestore: ", error);
+        showToast('Koneksi Database', 'Gagal memuat data dari cloud. Periksa aturan Rules Firestore Anda.', 'error');
+        renderApp();
       });
     }
 
