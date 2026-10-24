@@ -17,7 +17,26 @@
        });
     })();
   </script>
+  <!-- Firebase App & Firestore via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <script>
+    // Konfigurasi Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA4REsjUKylS2NWgCQJ-Ry4uvfh21YLm8Q",
+      authDomain: "laskarmpq.firebaseapp.com",
+      projectId: "laskarmpq",
+      storageBucket: "laskarmpq.firebasestorage.app",
+      messagingSenderId: "1005600053571",
+      appId: "1:1005600053571:web:6497849db835a4e9e9b7f6",
+      measurementId: "G-EK1HLC7NZS"
+    };
+
+    // Inisialisasi Firebase & Database Firestore
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     tailwind.config = {
       theme: {
         extend: {
@@ -168,7 +187,7 @@
     let currentTab = 'form'; 
     let teamMembers = [];
     let pendingEmailData = null;
-    let submissions = JSON.parse(localStorage.getItem('LASKAR_SUBMISSIONS')) || [];
+    let submissions = []; // Data dimuat dari cloud Firestore
     let currentActiveFile = null;
 
     function createEncryptedToken(user) {
@@ -1121,6 +1140,7 @@
       }
     }
 
+    // DISIMPAN KE CLOUD FIRESTORE
     function handleFormSubmit(e) {
       e.preventDefault();
 
@@ -1153,56 +1173,66 @@
         nomorRekening: isNonRek ? '' : (document.getElementById('nomorRekening') ? document.getElementById('nomorRekening').value : ''),
         sertifikatName: selectedFileName || 'sertifikat_laskar.pdf',
         fileUrl: selectedFileUrl || '',
-        statusReview: 'Sudah Direview',
+        statusReview: 'Belum Direview',
         statusDana: isNonRek ? 'Selesai' : 'Belum Diproses',
         catatanAdmin: '',
         createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
       };
 
-      submissions.unshift(newSub);
-      localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
-      teamMembers = [];
-      selectedFileName = '';
-      selectedFileUrl = '';
+      // Simpan ke Firestore
+      db.collection("submissions").add(newSub).then((docRef) => {
+        teamMembers = [];
+        selectedFileName = '';
+        selectedFileUrl = '';
 
-      showToast('Pengajuan Berhasil!', 'Data pengajuan telah dicatat dalam sistem.', 'success');
-      currentTab = 'history';
-      renderApp();
+        showToast('Pengajuan Berhasil!', 'Data telah tersimpan di cloud database.', 'success');
+        currentTab = 'history';
+        loadSubmissionsFromCloud();
+      }).catch((error) => {
+        showToast('Gagal Menyimpan', 'Terjadi kesalahan jaringan.', 'error');
+      });
     }
 
     function updateReviewStatus(id, newStatus) {
       if (currentUser.role !== 'dmph') return;
       const sub = submissions.find(s => s.id === id);
       if (!sub) return;
-      sub.statusReview = newStatus;
-      localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
-      showToast('Status Review Diperbarui', `Status review ${sub.id} menjadi: ${newStatus}`, 'info');
-      renderApp();
+
+      db.collection("submissions").doc(sub.docId).update({ statusReview: newStatus }).then(() => {
+        showToast('Status Review Diperbarui', `Status review ${sub.id} menjadi: ${newStatus}`, 'info');
+        loadSubmissionsFromCloud();
+      });
     }
 
     function updateDanaStatus(id, newStatus) {
       if (currentUser.role !== 'dmph') return;
       const sub = submissions.find(s => s.id === id);
       if (!sub) return;
-      sub.statusDana = newStatus;
-      localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
-      showToast('Status Dana Diperbarui', `Status dana ${sub.id} menjadi: ${newStatus}`, 'success');
 
-      triggerEmailNotification(
-        sub.userEmail,
-        `Pencairan Dana LASKAR: ${sub.namaEvent}`,
-        `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Status pencairan dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah diperbarui menjadi:<br><br><span style="color:#166534; font-weight:bold; font-size:15px;">" ${newStatus} "</span>`
-      );
+      db.collection("submissions").doc(sub.docId).update({ statusDana: newStatus }).then(() => {
+        showToast('Status Dana Diperbarui', `Status dana ${sub.id} menjadi: ${newStatus}`, 'success');
 
-      renderApp();
+        triggerEmailNotification(
+          sub.userEmail,
+          `Pencairan Dana LASKAR: ${sub.namaEvent}`,
+          `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Status pencairan dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah diperbarui menjadi:<br><br><span style="color:#166534; font-weight:bold; font-size:15px;">" ${newStatus} "</span>`
+        );
+
+        loadSubmissionsFromCloud();
+      });
     }
 
     function deleteSubmission(id) {
-      if (confirm('Apakah Anda yakin ingin menghapus pengajuan dengan ID ' + id + ' ini?')) {
-        submissions = submissions.filter(sub => sub.id !== id);
-        localStorage.setItem('LASKAR_SUBMISSIONS', JSON.stringify(submissions));
-        showToast('Berhasil Dihapus', `Data pengajuan ${id} telah dihapus dari sistem.`, 'success');
-        renderApp();
+      const sub = submissions.find(s => s.id === id);
+      if (!sub) return;
+
+      if (confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')) {
+        db.collection("submissions").doc(sub.docId).delete().then(() => {
+          showToast('Berhasil Dihapus', `Data pengajuan ${id} telah dihapus dari cloud.`, 'success');
+          loadSubmissionsFromCloud();
+        }).catch((error) => {
+          showToast('Gagal Menghapus', 'Terjadi kesalahan jaringan.', 'error');
+        });
       }
     }
 
@@ -1361,8 +1391,25 @@
       input.value = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
     }
 
+    // AMBIL DATA DARI CLOUD FIRESTORE
+    function loadSubmissionsFromCloud() {
+      db.collection("submissions").orderBy("createdAt", "desc").get().then((querySnapshot) => {
+        submissions = [];
+        querySnapshot.forEach((doc) => {
+          let data = doc.data();
+          data.docId = doc.id; // Simpan ID dokumen dari Firestore untuk keperluan update/delete
+          submissions.push(data);
+        });
+        renderApp();
+      }).catch((error) => {
+        console.error("Gagal mengambil data dari Firestore: ", error);
+      });
+    }
+
+    // Saat web dibuka pertama kali, muat data dari cloud
     window.onload = function() {
-      renderApp();
+      verifyAndLoadSession();
+      loadSubmissionsFromCloud();
     };
   </script>
 </body>
