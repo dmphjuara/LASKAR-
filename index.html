@@ -110,12 +110,12 @@
       <div class="p-6 space-y-4 text-sm bg-slate-50/50">
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
           <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
-            <i class="fa-solid fa-file-pdf"></i>
+            <i class="fa-solid fa-file-image"></i>
           </div>
           <div class="overflow-hidden">
             <p class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Nama Berkas Lampiran</p>
             <p id="modal-file-name" class="font-bold text-slate-900 text-base truncate"></p>
-            <p class="text-xs text-emerald-600 font-bold mt-0.5"><i class="fa-solid fa-circle-check"></i> Status: Aman & Terverifikasi</p>
+            <p class="text-xs text-emerald-600 font-bold mt-0.5"><i class="fa-solid fa-circle-check"></i> Status: Terkompresi & Terverifikasi</p>
           </div>
         </div>
 
@@ -128,7 +128,7 @@
           Tutup
         </button>
         <button onclick="simulateDownload()" class="px-5 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-mpq-900/20">
-          <i class="fa-solid fa-download"></i> Unduh / Buka Berkas
+          <i class="fa-solid fa-download"></i> Unduh / Buka Gambar
         </button>
       </div>
     </div>
@@ -185,10 +185,11 @@
     let sessionToken = localStorage.getItem('LASKAR_SESSION_TOKEN') || null;
     let currentUser = null; 
     let currentTab = 'form'; 
-    let teamMembers = [];
     let pendingEmailData = null;
     let submissions = []; 
     let currentActiveFile = null;
+    let selectedFileName = '';
+    let selectedFileUrl = '';
 
     function createEncryptedToken(user) {
       const payload = {
@@ -438,7 +439,7 @@
               </h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200/60">
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap Mahasiswa <span class="text-red-600">*</span></label>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap<span class="text-red-600">*</span></label>
                   <input type="text" id="formNamaMahasiswa" required value="${currentUser.name.includes('MAHASISWA (') ? '' : currentUser.name}" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-mpq-600 outline-none shadow-sm" placeholder="Masukkan Nama Lengkap Anda">
                 </div>
                 <div>
@@ -477,7 +478,7 @@
 
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Nama Cabang Lomba <span class="text-red-600">*</span></label>
-                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: Hifdzil 10 Juz">
+                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: MHQ 10 Juz">
                 </div>
 
                 <div>
@@ -509,33 +510,17 @@
                 </div>
               </div>
 
+              <!-- Bagian Tim/Kelompok (Daftar Anggota Dihapus) -->
               <div id="team-section" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 mt-3">
                 <p class="text-xs font-bold text-slate-700 uppercase">Detail Kelompok / Tim</p>
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Tim / Kelompok</label>
-                  <input type="text" id="namaTim" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Contoh: Tim Syahril Qur'an UMS">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Daftar Anggota Tim</label>
-                  <div class="flex gap-2 mb-2">
-                    <input type="text" id="memberInput" class="flex-1 px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Nama Anggota (NIM)">
-                    <button type="button" onclick="addTeamMember()" class="px-4 py-2 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition shadow-sm">
-                      + Tambah
-                    </button>
-                  </div>
-                  <div id="member-list" class="flex flex-wrap gap-2">
-                    ${teamMembers.map((m, idx) => `
-                      <span class="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold shadow-sm">
-                        ${m}
-                        <button type="button" onclick="removeTeamMember(${idx})" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-xmark"></i></button>
-                      </span>
-                    `).join('')}
-                  </div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Tim / Kelompok <span class="text-red-600">*</span></label>
+                  <input type="text" id="namaTim" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Contoh: Tiga Serangkai MPQ">
                 </div>
               </div>
             </div>
 
-            <!-- Bagian Rekening (Bisa Tersembunyi Otomatis) -->
+            <!-- Bagian Rekening -->
             <div id="rekening-section" class="p-6 space-y-4">
               <h3 class="text-sm font-bold text-mpq-800 uppercase tracking-wide flex items-center gap-2.5 border-b border-slate-100 pb-3">
                 <span class="w-7 h-7 rounded-xl bg-emerald-100 text-mpq-900 flex items-center justify-center text-xs font-bold">3</span> Rekening / E-Wallet Pencairan
@@ -568,12 +553,12 @@
               </h3>
 
               <div class="border-2 border-dashed border-emerald-300 rounded-2xl p-8 text-center hover:bg-emerald-50/40 transition relative bg-slate-50/40">
-                <input type="file" id="sertifikatFile" accept=".pdf,.png,.jpg,.jpeg" required onchange="handleFileSelect(event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                <input type="file" id="sertifikatFile" accept=".png,.jpg,.jpeg" required onchange="handleFileSelect(event)" class="absolute inset-0 opacity-0 cursor-pointer">
                 <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-2xl mx-auto mb-3 shadow-inner">
                   <i class="fa-solid fa-cloud-arrow-up"></i>
                 </div>
-                <p id="file-label" class="text-sm font-bold text-slate-800">Klik atau seret berkas bukti kejuaraan / sertifikat di sini</p>
-                <p class="text-xs text-slate-400 mt-1">Format yang didukung: PDF, JPG, atau PNG (Maks. 5 MB)</p>
+                <p id="file-label" class="text-sm font-bold text-slate-800">Klik atau seret foto sertifikat / bukti di sini</p>
+                <p class="text-xs text-slate-400 mt-1">Hanya format Gambar: JPG, JPEG, atau PNG</p>
               </div>
             </div>
 
@@ -581,7 +566,7 @@
               <button type="button" onclick="switchTab('history')" class="px-5 py-2.5 bg-slate-200/80 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
                 Batal
               </button>
-              <button type="submit" class="px-6 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-mpq-900/20 flex items-center gap-2">
+              <button type="submit" id="btn-submit-form" class="px-6 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-mpq-900/20 flex items-center gap-2">
                 <i class="fa-solid fa-paper-plane"></i> Kirim Form Pengajuan
               </button>
             </div>
@@ -724,7 +709,7 @@
                       </td>
                       <td class="py-4 px-5 text-center">
                         <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-mpq-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-slate-200">
-                          <i class="fa-solid fa-file-pdf text-red-600"></i> Lihat
+                          <i class="fa-solid fa-file-image text-emerald-600"></i> Lihat
                         </button>
                       </td>
                       <td class="py-4 px-5 text-center">
@@ -967,7 +952,7 @@
                       <!-- Kolom 6: Berkas -->
                       <td class="py-4 px-5">
                         <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
-                          <i class="fa-solid fa-file-pdf text-red-600"></i> Cek Berkas
+                          <i class="fa-solid fa-file-image text-emerald-600"></i> Cek Berkas
                         </button>
                       </td>
 
@@ -1106,43 +1091,64 @@
       }
     }
 
-    function addTeamMember() {
-      const input = document.getElementById('memberInput');
-      const val = input.value.trim();
-      if (val) {
-        teamMembers.push(val);
-        input.value = '';
-        renderApp();
-      }
-    }
-
-    function removeTeamMember(idx) {
-      teamMembers.splice(idx, 1);
-      renderApp();
-    }
-
-    let selectedFileName = '';
-    let selectedFileUrl = '';
-    
+    // Fungsi kompresi gambar otomatis ke format JPEG aman
     function handleFileSelect(e) {
       const files = e.target.files;
       if (files.length > 0) {
         const file = files[0];
+
+        if (file.type === 'application/pdf') {
+          showToast('PDF Tidak Diizinkan', 'Harap unggah bukti berupa foto/gambar (JPG, JPEG, PNG).', 'error');
+          e.target.value = '';
+          selectedFileName = '';
+          selectedFileUrl = '';
+          document.getElementById('file-label').innerHTML = `Klik atau seret foto sertifikat / bukti di sini`;
+          return;
+        }
+
         selectedFileName = file.name;
-        
+
         const reader = new FileReader();
         reader.onload = function(evt) {
-          selectedFileUrl = evt.target.result;
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1000;
+
+            if (width > height && width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            } else if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            selectedFileUrl = canvas.toDataURL('image/jpeg', 0.7);
+            showToast('Foto Dioptimalkan', 'Ukuran foto berhasil dikompresi agar cepat disimpan.', 'success');
+          };
+          img.src = evt.target.result;
         };
         reader.readAsDataURL(file);
 
-        document.getElementById('file-label').innerHTML = `<span class="text-mpq-800 font-bold"><i class="fa-solid fa-file-pdf"></i> Terpilih: ${selectedFileName}</span>`;
+        document.getElementById('file-label').innerHTML = `<span class="text-mpq-800 font-bold"><i class="fa-solid fa-file-image"></i> Terpilih: ${selectedFileName}</span>`;
       }
     }
 
-    // DISIMPAN KE CLOUD FIRESTORE
+    // DISIMPAN LANGSUNG KE CLOUD FIRESTORE
     function handleFormSubmit(e) {
       e.preventDefault();
+
+      if (!selectedFileUrl) {
+        showToast('Peringatan', 'Silakan pilih foto sertifikat/bukti terlebih dahulu.', 'error');
+        return;
+      }
 
       const namaManual = document.getElementById('formNamaMahasiswa').value.trim();
       if (namaManual) {
@@ -1151,8 +1157,13 @@
 
       const jenis = document.getElementById('jenisAjuan').value;
       const isNonRek = (jenis === 'Non-Juara' || jenis === 'Apresiasi/Non-Juara');
-
       const nominalVal = document.getElementById('nominalDetailInput') ? document.getElementById('nominalDetailInput').value : '';
+
+      const submitBtn = document.getElementById('btn-submit-form');
+      if(submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan Data...`;
+      }
 
       const newSub = {
         id: 'LASKAR-' + (800 + submissions.length + 1),
@@ -1167,21 +1178,18 @@
         jenisKompetisi: document.getElementById('jenisKompetisi').value,
         juara: isNonRek ? 'Non-Juara / Peserta' : (document.getElementById('juara') ? document.getElementById('juara').value : 'Non-Juara / Peserta'),
         namaTim: document.getElementById('namaTim') ? document.getElementById('namaTim').value : '',
-        anggotaTim: [...teamMembers],
         penyelenggara: '',
         rekeningProvider: isNonRek ? '' : (document.getElementById('rekeningProvider') ? document.getElementById('rekeningProvider').value : ''),
         nomorRekening: isNonRek ? '' : (document.getElementById('nomorRekening') ? document.getElementById('nomorRekening').value : ''),
-        sertifikatName: selectedFileName || 'sertifikat_laskar.pdf',
-        fileUrl: selectedFileUrl || '',
+        sertifikatName: selectedFileName,
+        fileUrl: selectedFileUrl, 
         statusReview: 'Belum Direview',
         statusDana: isNonRek ? 'Selesai' : 'Belum Diproses',
         catatanAdmin: '',
         createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
       };
 
-      // Simpan ke Firestore
-      db.collection("submissions").add(newSub).then((docRef) => {
-        teamMembers = [];
+      db.collection("submissions").add(newSub).then(() => {
         selectedFileName = '';
         selectedFileUrl = '';
 
@@ -1189,7 +1197,12 @@
         currentTab = 'history';
         loadSubmissionsFromCloud();
       }).catch((error) => {
+        console.error("Firestore Error:", error);
         showToast('Gagal Menyimpan', 'Terjadi kesalahan jaringan atau izin database.', 'error');
+        if(submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Form Pengajuan`;
+        }
       });
     }
 
@@ -1311,14 +1324,12 @@
       
       if (fileUrl && fileUrl.startsWith('data:image/')) {
         container.innerHTML = `<img src="${fileUrl}" class="max-h-60 mx-auto rounded-xl border shadow-sm object-contain">`;
-      } else if (fileUrl && fileUrl.startsWith('data:application/pdf')) {
-        container.innerHTML = `<iframe src="${fileUrl}" class="w-full h-60 rounded-xl border shadow-sm"></iframe>`;
       } else {
         container.innerHTML = `
           <div class="py-6 space-y-2">
-            <i class="fa-solid fa-file-lines text-mpq-800 text-4xl"></i>
-            <p class="text-xs font-bold text-slate-700">Berkas Dokumen Lampiran</p>
-            <p class="text-[11px] text-slate-500">Klik tombol unduh di bawah untuk melihat dokumen asli.</p>
+            <i class="fa-solid fa-file-image text-mpq-800 text-4xl"></i>
+            <p class="text-xs font-bold text-slate-700">Berkas Bukti Foto</p>
+            <p class="text-[11px] text-slate-500">Klik tombol unduh di bawah untuk melihat gambar penuh.</p>
           </div>
         `;
       }
@@ -1336,7 +1347,7 @@
         document.body.removeChild(a);
         showToast('Unduhan Berhasil', `Mengunduh berkas: ${currentActiveFile.name}`, 'success');
       } else {
-        showToast('Informasi Berkas', `Simulasi membuka dokumen: ${currentActiveFile ? currentActiveFile.name : 'Dokumen'}`, 'info');
+        showToast('Informasi Berkas', `Simulasi membuka gambar: ${currentActiveFile ? currentActiveFile.name : 'Gambar'}`, 'info');
       }
     }
 
@@ -1394,21 +1405,21 @@
     // AMBIL DATA DARI CLOUD FIRESTORE
     function loadSubmissionsFromCloud() {
       db.collection("submissions").orderBy("createdAt", "desc").get().then((querySnapshot) => {
-        submissions = [];
+        let tempSubmissions = [];
         querySnapshot.forEach((doc) => {
           let data = doc.data();
-          data.docId = doc.id; // Simpan ID dokumen dari Firestore untuk keperluan update/delete
-          submissions.push(data);
+          data.docId = doc.id; 
+          tempSubmissions.push(data);
         });
+        submissions = tempSubmissions;
         renderApp();
       }).catch((error) => {
         console.error("Gagal mengambil data dari Firestore: ", error);
-        showToast('Koneksi Database', 'Gagal memuat data dari cloud. Periksa aturan Rules Firestore Anda.', 'error');
+        showToast('Koneksi Database', 'Gagal memuat data dari cloud.', 'error');
         renderApp();
       });
     }
 
-    // Saat web dibuka pertama kali, muat data dari cloud
     window.onload = function() {
       verifyAndLoadSession();
       loadSubmissionsFromCloud();
