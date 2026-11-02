@@ -99,7 +99,7 @@
             <i class="fa-solid fa-file-shield text-xl"></i>
           </div>
           <div>
-            <h3 class="font-bold text-base">Pratinjau Berkas Dokumen</h3>
+            <h3 id="modal-title-text" class="font-bold text-base">Pratinjau Berkas Dokumen</h3>
             <p class="text-xs text-emerald-200">Sistem Verifikasi LASKAR</p>
           </div>
         </div>
@@ -113,9 +113,9 @@
             <i class="fa-solid fa-file-image"></i>
           </div>
           <div class="overflow-hidden">
-            <p class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Nama Berkas Lampiran</p>
+            <p class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Nama Berkas</p>
             <p id="modal-file-name" class="font-bold text-slate-900 text-base truncate"></p>
-            <p class="text-xs text-emerald-600 font-bold mt-0.5"><i class="fa-solid fa-circle-check"></i> Status: Terkompresi & Terverifikasi</p>
+            <p class="text-xs text-emerald-600 font-bold mt-0.5"><i class="fa-solid fa-circle-check"></i> Status: Aman & Terverifikasi</p>
           </div>
         </div>
 
@@ -258,7 +258,7 @@
               </div>
               <div>
                 <h1 class="font-bold text-2xl tracking-wide text-white drop-shadow-sm">LASKAR</h1>
-                <p class="text-xs text-emerald-200 italic font-medium">Sistem Layanan Pengajuan Insentif & Subsidi</p>
+                <p class="text-xs text-emerald-200 italic font-medium">Sistem Layanan Pengajuan Insentif & Lomba</p>
               </div>
             </div>
 
@@ -329,7 +329,7 @@
             <div class="mt-auto pt-6 px-2 text-xs text-slate-400 space-y-1 border-t border-slate-200/60 mt-6">
               <p class="font-bold text-slate-600">LASKAR</p>
               <p class="text-[11px] leading-relaxed text-slate-500">
-                "Layanan Ajuan Subsidi Kejuaraan Apresiasi Rekap".
+                "Sistem Layanan Apresiasi Prestasi & Administrasi Anggota KSQ Universitas Muhammadiyah Surakarta".
               </p>
             </div>
           </aside>
@@ -439,8 +439,8 @@
               </h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200/60">
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap<span class="text-red-600">*</span></label>
-                  <input type="text" id="formNamaMahasiswa" required value="${currentUser.name.includes('MAHASISWA (') ? '' : currentUser.name}" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-mpq-600 outline-none shadow-sm" placeholder="Masukkan Nama Lengkap">
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap Mahasiswa <span class="text-red-600">*</span></label>
+                  <input type="text" id="formNamaMahasiswa" required value="${currentUser.name.includes('MAHASISWA (') ? '' : currentUser.name}" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-mpq-600 outline-none shadow-sm" placeholder="Masukkan Nama Lengkap Anda">
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">NIM</label>
@@ -459,7 +459,7 @@
                   <label class="block text-xs font-bold text-mpq-900 mb-1.5 uppercase">Jenis Ajuan <span class="text-red-600">*</span></label>
                   <select id="jenisAjuan" onchange="handleJenisAjuanChange(this.value)" required class="w-full px-3.5 py-2.5 text-sm border border-emerald-300 rounded-xl outline-none bg-white font-bold text-mpq-900 shadow-sm">
                     <option value="">-- Pilih Jenis Ajuan --</option>
-                    <option value="Insentif">Insentif Kejuaraan</option>
+                    <option value="Insentif">Insentif Prestasi Lomba</option>
                     <option value="Subsidi">Subsidi Pendaftaran Lomba</option>
                     <option value="Transportasi">Transportasi / Akomodasi Lomba</option>
                     <option value="Non-Juara">Non-Juara (Peserta Lomba)</option>
@@ -478,7 +478,7 @@
 
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Nama Cabang Lomba <span class="text-red-600">*</span></label>
-                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: MHQ 10 Juz">
+                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: Hifdzil 10 Juz">
                 </div>
 
                 <div>
@@ -510,12 +510,12 @@
                 </div>
               </div>
 
-              <!-- Bagian Tim/Kelompok (Daftar Anggota Dihapus) -->
+              <!-- Bagian Tim/Kelompok -->
               <div id="team-section" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 mt-3">
                 <p class="text-xs font-bold text-slate-700 uppercase">Detail Kelompok / Tim</p>
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Anggota Tim <span class="text-red-600">*</span></label>
-                  <input type="text" id="Anggota Tim" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Contoh: Fulan a, Fulan B, dan Fulan C">
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Tim / Kelompok <span class="text-red-600">*</span></label>
+                  <input type="text" id="namaTim" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Contoh: Tim Syahril Qur'an UMS">
                 </div>
               </div>
             </div>
@@ -529,15 +529,19 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200/60">
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Pilihan Bank / E-Wallet <span class="text-red-600">*</span></label>
-                  <select id="rekening" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
-                    <option value="">-- Pilih --</option>
+                  <select id="rekeningProvider" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
+                    <option value="">-- Pilih Provider --</option>
+                    <option value="GoPay">GoPay</option>
+                    <option value="DANA">DANA</option>
                     <option value="ShopeePay">ShopeePay</option>
                     <option value="BSI">Bank Syariah Indonesia (BSI)</option>
+                    <option value="BNI">Bank Negara Indonesia (BNI)</option>
+                    <option value="SeaBank">SeaBank</option>
                   </select>
                 </div>
 
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Nomor Rekening / HP (a.n pemohon) <span class="text-red-600">*</span></label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Nomor Rekening / HP (a.n Pemohon) <span class="text-red-600">*</span></label>
                   <input type="text" id="nomorRekening" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Nomor rekening / Handphone">
                 </div>
               </div>
@@ -554,7 +558,7 @@
                   <i class="fa-solid fa-cloud-arrow-up"></i>
                 </div>
                 <p id="file-label" class="text-sm font-bold text-slate-800">Klik atau seret foto sertifikat / bukti di sini</p>
-                <p class="text-xs text-slate-400 mt-1">Hanya format Gambar: JPG, JPEG, atau PNG</p>
+                <p class="text-xs text-slate-400 mt-1">Hanya format Gambar: JPG, JPEG, atau PNG (Otomatis dikompres & Cepat)</p>
               </div>
             </div>
 
@@ -627,13 +631,13 @@
       const mySubmissions = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
 
       return `
-        <div class="max-w-5xl mx-auto space-y-6">
+        <div class="max-w-6xl mx-auto space-y-6">
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
                 <i class="fa-solid fa-clock-rotate-left text-mpq-700 text-lg"></i> Riwayat Pengajuan Saya
               </h2>
-              <p class="text-xs text-slate-500 mt-1">Daftar pengajuan aktif atas akun: <strong class="text-mpq-800 font-serif">${currentUser.email}</strong></p>
+              <p class="text-xs text-slate-500 mt-1">Daftar pengajuan aktif atas akun: <strong class="text-mpq-800 font-mono">${currentUser.email}</strong></p>
             </div>
             <button onclick="switchTab('form')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-mpq-900/20 flex items-center gap-2">
               <i class="fa-solid fa-plus"></i> Buat Ajuan Baru
@@ -645,22 +649,23 @@
               <table class="w-full text-left border-collapse">
                 <thead>
                   <tr class="bg-slate-800 text-white text-xs font-bold uppercase tracking-wider border-b border-slate-700">
-                    <th class="py-3.5 px-5">ID / Tanggal</th>
-                    <th class="py-3.5 px-5">Jenis Ajuan</th>
-                    <th class="py-3.5 px-5">Nominal</th>
-                    <th class="py-3.5 px-5">Event Lomba</th>
-                    <th class="py-3.5 px-5">Capaian</th>
-                    <th class="py-3.5 px-5">Rekening Target</th>
-                    <th class="py-3.5 px-5">Status Review</th>
-                    <th class="py-3.5 px-5">Status Dana</th>
-                    <th class="py-3.5 px-5 text-center">Berkas</th>
-                    <th class="py-3.5 px-5 text-center">Trash</th>
+                    <th class="py-3.5 px-4">ID / Tanggal</th>
+                    <th class="py-3.5 px-4">Jenis Ajuan</th>
+                    <th class="py-3.5 px-4">Nominal</th>
+                    <th class="py-3.5 px-4">Event Lomba</th>
+                    <th class="py-3.5 px-4">Capaian</th>
+                    <th class="py-3.5 px-4">Rekening Target</th>
+                    <th class="py-3.5 px-4">Status Review</th>
+                    <th class="py-3.5 px-4">Status Dana</th>
+                    <th class="py-3.5 px-4 text-center">Berkas Sertifikat</th>
+                    <th class="py-3.5 px-4 text-center">Bukti Transfer</th>
+                    <th class="py-3.5 px-4 text-center">Trash</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                   ${mySubmissions.length === 0 ? `
                     <tr>
-                      <td colspan="10" class="py-16 text-center text-slate-400">
+                      <td colspan="11" class="py-16 text-center text-slate-400">
                         <div class="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
                           <i class="fa-solid fa-box-open"></i>
                         </div>
@@ -669,46 +674,55 @@
                     </tr>
                   ` : mySubmissions.map((sub) => `
                     <tr class="hover:bg-slate-50/80 transition">
-                      <td class="py-4 px-5 font-serif font-bold text-mpq-800">
+                      <td class="py-4 px-4 font-mono font-bold text-mpq-800">
                         ${sub.id}
-                        <p class="text-[10px] text-slate-400 font-serif font-normal mt-0.5">${sub.createdAt}</p>
+                        <p class="text-[10px] text-slate-400 font-sans font-normal mt-0.5">${sub.createdAt}</p>
                       </td>
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
                           ${sub.jenisAjuan || 'Insentif'}
                         </span>
                       </td>
-                      <td class="py-4 px-5 font-bold text-emerald-800">
+                      <td class="py-4 px-4 font-bold text-emerald-800">
                         ${sub.nominalDetail ? `Rp ${sub.nominalDetail}` : '<span class="text-slate-400 font-normal italic">-</span>'}
                       </td>
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         <p class="font-bold text-slate-900">${sub.namaEvent}</p>
                         <p class="text-[11px] text-slate-500 mt-0.5">${sub.namaCabang ? sub.namaCabang + ' • ' : ''}${sub.penyelenggara || ''}</p>
                       </td>
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
                           ${sub.juara}
                         </span>
                         <p class="text-[10px] text-slate-500">${sub.level}</p>
                       </td>
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         ${sub.rekeningProvider ? `
                           <span class="text-[11px] font-bold text-slate-800">${sub.rekeningProvider}</span>
-                          <p class="text-[11px] font-serif text-slate-500 mt-0.5">${sub.nomorRekening}</p>
+                          <p class="text-[11px] font-mono text-slate-500 mt-0.5">${sub.nomorRekening}</p>
                         ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
                       </td>
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         ${renderBadgeReview(sub.statusReview)}
                       </td>
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         ${renderBadgeDana(sub.statusDana)}
                       </td>
-                      <td class="py-4 px-5 text-center">
-                        <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-mpq-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-slate-200">
+                      <td class="py-4 px-4 text-center">
+                        <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}', 'Sertifikat / Bukti Kejuaraan')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-mpq-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-slate-200">
                           <i class="fa-solid fa-file-image text-emerald-600"></i> Lihat
                         </button>
                       </td>
-                      <td class="py-4 px-5 text-center">
+                      <td class="py-4 px-4 text-center">
+                        ${sub.buktiTransferUrl ? `
+                          <button onclick="viewFile('Bukti_Transfer_${sub.id}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-emerald-300 shadow-sm">
+                            <i class="fa-solid fa-receipt text-emerald-700"></i> Cek Struk
+                          </button>
+                        ` : `
+                          <span class="text-[11px] text-slate-400 italic">Belum Ada</span>
+                        `}
+                      </td>
+                      <td class="py-4 px-4 text-center">
                         <button onclick="deleteSubmission('${sub.id}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
                           <i class="fa-solid fa-trash-can text-sm"></i>
                         </button>
@@ -744,7 +758,7 @@
               <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
                 <i class="fa-solid fa-chart-pie text-gold-500 text-lg"></i> Statistik & Grafik Prestasi Saya
               </h2>
-              <p class="text-xs text-slate-500 mt-1">Ringkasan capaian dan rekapitulasi data pengajuan akun: <strong class="text-mpq-800 font-serif">${currentUser.email}</strong></p>
+              <p class="text-xs text-slate-500 mt-1">Ringkasan capaian dan rekapitulasi data pengajuan akun: <strong class="text-mpq-800 font-mono">${currentUser.email}</strong></p>
             </div>
             <button onclick="switchTab('form')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-mpq-900/20 flex items-center gap-2">
               <i class="fa-solid fa-plus"></i> Buat Ajuan Baru
@@ -890,15 +904,15 @@
               <table class="w-full text-left border-collapse" id="admin-table">
                 <thead>
                   <tr class="bg-mpq-900 text-white text-xs font-bold uppercase tracking-wider">
-                    <th class="py-3.5 px-5">Pengusul & Event</th>
-                    <th class="py-3.5 px-5">Jenis Ajuan</th>
-                    <th class="py-3.5 px-5">Nominal</th>
-                    <th class="py-3.5 px-5">Capaian</th>
-                    <th class="py-3.5 px-5">Rekening Tujuan</th>
-                    <th class="py-3.5 px-5">Berkas</th>
-                    <th class="py-3.5 px-5">Status Review</th>
-                    <th class="py-3.5 px-5">Status Dana</th>
-                    <th class="py-3.5 px-5 text-center">Trash</th>
+                    <th class="py-3.5 px-4">Pengusul & Event</th>
+                    <th class="py-3.5 px-4">Jenis Ajuan</th>
+                    <th class="py-3.5 px-4">Nominal</th>
+                    <th class="py-3.5 px-4">Capaian</th>
+                    <th class="py-3.5 px-4">Rekening Tujuan</th>
+                    <th class="py-3.5 px-4">Berkas Sertifikat</th>
+                    <th class="py-3.5 px-4">Status Review</th>
+                    <th class="py-3.5 px-4">Status Dana & Bukti Transfer</th>
+                    <th class="py-3.5 px-4 text-center">Trash</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
@@ -911,26 +925,26 @@
                   ` : submissions.map((sub) => `
                     <tr class="hover:bg-slate-50/80 transition submission-row" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()}" data-review="${sub.statusReview}" data-dana="${sub.statusDana}">
                       <!-- Kolom 1: Pengusul & Event -->
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         <p class="font-bold text-slate-900 text-sm">${sub.pengusulName}</p>
-                        <p class="text-[11px] font-serif text-slate-500">${sub.pengusulNim}</p>
+                        <p class="text-[11px] font-mono text-slate-500">${sub.pengusulNim}</p>
                         <p class="font-bold text-xs text-mpq-800 mt-1">${sub.namaEvent}</p>
                       </td>
 
                       <!-- Kolom 2: Jenis Ajuan -->
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
                           ${sub.jenisAjuan || 'Insentif'}
                         </span>
                       </td>
 
                       <!-- Kolom 3: Nominal -->
-                      <td class="py-4 px-5 font-bold text-emerald-800">
+                      <td class="py-4 px-4 font-bold text-emerald-800">
                         ${sub.nominalDetail ? `Rp ${sub.nominalDetail}` : '<span class="text-slate-400 font-normal italic">-</span>'}
                       </td>
 
                       <!-- Kolom 4: Capaian -->
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
                           ${sub.juara}
                         </span>
@@ -938,22 +952,22 @@
                       </td>
 
                       <!-- Kolom 5: Rekening Tujuan -->
-                      <td class="py-4 px-5">
+                      <td class="py-4 px-4">
                         ${sub.rekeningProvider ? `
                           <span class="font-bold text-slate-900">${sub.rekeningProvider}</span>
-                          <p class="text-xs font-serif text-slate-500 mt-0.5">${sub.nomorRekening}</p>
+                          <p class="text-xs font-mono text-slate-500 mt-0.5">${sub.nomorRekening}</p>
                         ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
                       </td>
 
                       <!-- Kolom 6: Berkas -->
-                      <td class="py-4 px-5">
-                        <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+                      <td class="py-4 px-4">
+                        <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}', 'Sertifikat / Bukti Kejuaraan')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
                           <i class="fa-solid fa-file-image text-emerald-600"></i> Cek Berkas
                         </button>
                       </td>
 
                       <!-- Kolom 7: Status Review -->
-                      <td class="py-4 px-5 space-y-2">
+                      <td class="py-4 px-4 space-y-2">
                         ${renderBadgeReview(sub.statusReview)}
                         <div>
                           <select onchange="updateReviewStatus('${sub.id}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
@@ -964,8 +978,8 @@
                         </div>
                       </td>
 
-                      <!-- Kolom 8: Status Dana -->
-                      <td class="py-4 px-5 space-y-2">
+                      <!-- Kolom 8: Status Dana & Upload Bukti Transfer -->
+                      <td class="py-4 px-4 space-y-2.5 min-w-[180px]">
                         ${renderBadgeDana(sub.statusDana)}
                         <div>
                           <select onchange="updateDanaStatus('${sub.id}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
@@ -974,10 +988,31 @@
                             <option value="Dana Dicairkan" ${sub.statusDana === 'Dana Dicairkan' ? 'selected' : ''}>Dana Dicairkan</option>
                           </select>
                         </div>
+                        
+                        <!-- Fitur Upload Bukti Transfer oleh Admin -->
+                        <div class="pt-1 border-t border-slate-100">
+                          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bukti Transfer:</label>
+                          ${sub.buktiTransferUrl ? `
+                            <div class="flex items-center gap-1.5">
+                              <button onclick="viewFile('Bukti_Transfer_${sub.id}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="flex-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-receipt"></i> Lihat Struk
+                              </button>
+                              <label class="cursor-pointer px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200" title="Ganti Bukti Transfer">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.id}', event)">
+                              </label>
+                            </div>
+                          ` : `
+                            <label class="cursor-pointer w-full py-1.5 px-2 bg-mpq-800 hover:bg-mpq-900 text-gold-400 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
+                              <i class="fa-solid fa-upload"></i> Upload Struk TF
+                              <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.id}', event)">
+                            </label>
+                          `}
+                        </div>
                       </td>
 
-                      <!-- Kolom 9: Tombol Hapus (Ikon Sampah) -->
-                      <td class="py-4 px-5 text-center">
+                      <!-- Kolom 9: Tombol Hapus -->
+                      <td class="py-4 px-4 text-center">
                         <button onclick="deleteSubmission('${sub.id}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
                           <i class="fa-solid fa-trash-can text-sm"></i>
                         </button>
@@ -1087,7 +1122,7 @@
       }
     }
 
-    // Fungsi kompresi gambar otomatis ke format JPEG aman
+    // Fungsi kompresi gambar sertifikat otomatis
     function handleFileSelect(e) {
       const files = e.target.files;
       if (files.length > 0) {
@@ -1137,7 +1172,66 @@
       }
     }
 
-    // DISIMPAN LANGSUNG KE CLOUD FIRESTORE
+    // Fungsi Khusus Admin Upload Bukti Transfer
+    function uploadBuktiTransfer(submissionId, e) {
+      const files = e.target.files;
+      if (files.length > 0) {
+        const file = files[0];
+        const sub = submissions.find(s => s.id === submissionId);
+        if (!sub || !sub.docId) return;
+
+        showToast('Memproses', 'Mengkompresi dan mengunggah bukti transfer...', 'info');
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 900;
+
+            if (width > height && width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            } else if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            // Update ke database Firestore
+            db.collection("submissions").doc(sub.docId).update({ 
+              buktiTransferUrl: compressedBase64,
+              statusDana: 'Dana Dicairkan' // Otomatis ubah status menjadi Dana Dicairkan saat struk di-upload
+            }).then(() => {
+              showToast('Berhasil!', 'Bukti transfer berhasil diunggah ke sistem.', 'success');
+              
+              // Kirim Notifikasi Email Otomatis ke Mahasiswa
+              triggerEmailNotification(
+                sub.userEmail,
+                `Dana LASKAR Telah Dicairkan: ${sub.namaEvent}`,
+                `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah ditransfer ke rekening / e-wallet Anda. Silakan cek menu <strong>Riwayat Saya</strong> pada web LASKAR untuk melihat bukti transfernya.<br><br>Barakallahu fiikum.`
+              );
+
+              loadSubmissionsFromCloud();
+            }).catch(err => {
+              showToast('Gagal', 'Gagal menyimpan bukti transfer ke database.', 'error');
+            });
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // DISIMPAN KE CLOUD FIRESTORE
     function handleFormSubmit(e) {
       e.preventDefault();
 
@@ -1179,6 +1273,7 @@
         nomorRekening: isNonRek ? '' : (document.getElementById('nomorRekening') ? document.getElementById('nomorRekening').value : ''),
         sertifikatName: selectedFileName,
         fileUrl: selectedFileUrl, 
+        buktiTransferUrl: '', // Kosong saat awal diajukan
         statusReview: 'Belum Direview',
         statusDana: isNonRek ? 'Selesai' : 'Belum Diproses',
         catatanAdmin: '',
@@ -1312,19 +1407,20 @@
       pendingEmailData = null;
     }
 
-    function viewFile(filename, fileUrl) {
+    function viewFile(filename, fileUrl, title = 'Pratinjau Berkas Dokumen') {
       currentActiveFile = { name: filename, url: fileUrl };
       document.getElementById('modal-file-name').innerText = filename;
+      document.getElementById('modal-title-text').innerText = title;
       
       const container = document.getElementById('modal-preview-container');
       
       if (fileUrl && fileUrl.startsWith('data:image/')) {
-        container.innerHTML = `<img src="${fileUrl}" class="max-h-60 mx-auto rounded-xl border shadow-sm object-contain">`;
+        container.innerHTML = `<img src="${fileUrl}" class="max-h-80 mx-auto rounded-xl border shadow-sm object-contain">`;
       } else {
         container.innerHTML = `
           <div class="py-6 space-y-2">
             <i class="fa-solid fa-file-image text-mpq-800 text-4xl"></i>
-            <p class="text-xs font-bold text-slate-700">Berkas Bukti Foto</p>
+            <p class="text-xs font-bold text-slate-700">Berkas Gambar</p>
             <p class="text-[11px] text-slate-500">Klik tombol unduh di bawah untuk melihat gambar penuh.</p>
           </div>
         `;
