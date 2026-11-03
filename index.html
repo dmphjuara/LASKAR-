@@ -966,7 +966,7 @@
                       <td class="py-4 px-4 space-y-2">
                         ${renderBadgeReview(sub.statusReview)}
                         <div>
-                          <select onchange="updateReviewStatus('${sub.id}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
+                          <select onchange="updateReviewStatus('${sub.docId}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
                             <option value="Belum Direview" ${sub.statusReview === 'Belum Direview' ? 'selected' : ''}>Belum Direview</option>
                             <option value="Sudah Direview" ${sub.statusReview === 'Sudah Direview' ? 'selected' : ''}>Sudah Direview</option>
                             <option value="Perlu Revisi" ${sub.statusReview === 'Perlu Revisi' ? 'selected' : ''}>Perlu Revisi</option>
@@ -978,7 +978,7 @@
                       <td class="py-4 px-4 space-y-2.5 min-w-[180px]">
                         ${renderBadgeDana(sub.statusDana)}
                         <div>
-                          <select onchange="updateDanaStatus('${sub.id}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
+                          <select onchange="updateDanaStatus('${sub.docId}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
                             <option value="Belum Diproses" ${sub.statusDana === 'Belum Diproses' ? 'selected' : ''}>Belum Diproses</option>
                             <option value="Disetujui" ${sub.statusDana === 'Disetujui' ? 'selected' : ''}>Disetujui</option>
                             <option value="Dana Dicairkan" ${sub.statusDana === 'Dana Dicairkan' ? 'selected' : ''}>Dana Dicairkan</option>
@@ -995,13 +995,13 @@
                               </button>
                               <label class="cursor-pointer px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200" title="Ganti Bukti Transfer">
                                 <i class="fa-solid fa-pen-to-square"></i>
-                                <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.id}', event)">
+                                <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.docId}', event)">
                               </label>
                             </div>
                           ` : `
                             <label class="cursor-pointer w-full py-1.5 px-2 bg-mpq-800 hover:bg-mpq-900 text-gold-400 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
                               <i class="fa-solid fa-upload"></i> Bukti TF
-                              <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.id}', event)">
+                              <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.docId}', event)">
                             </label>
                           `}
                         </div>
@@ -1024,14 +1024,15 @@
     }
 
     function renderBadgeReview(status) {
-      if (status === 'Belum Direview' || status === 'Belum Diproses')
-        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-200"><i class="fa-solid fa-circle-xmark text-rose-600"></i> Belum Direview</span>`;
-      if (status === 'Sudah Direview' || status === 'Disetujui') {
+      const st = (status || '').trim();
+
+      if (st === 'Sudah Direview' || st === 'Disetujui') {
         return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
-      } else if (status === 'Perlu Revisi') {
+      } else if (st === 'Perlu Revisi') {
         return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-emerald-200"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perlu Revisi</span>`;
+      } else {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-200"><i class="fa-solid fa-circle-xmark text-rose-600"></i> Belum Direview</span>`;
       }
-      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
     }
 
     function renderBadgeDana(status) {
@@ -1293,32 +1294,57 @@
       });
     }
 
-    function updateReviewStatus(id, newStatus) {
+    function updateReviewStatus(docId, newStatus) {
       if (currentUser.role !== 'dmph') return;
-      const sub = submissions.find(s => s.id === id);
-      if (!sub || !sub.docId) return;
+      
+      const sub = submissions.find(s => s.docId === docId);
+      if (!sub) {
+        showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
+        return;
+      }
 
-      db.collection("submissions").doc(sub.docId).update({ statusReview: newStatus }).then(() => {
-        showToast('Status Review Diperbarui', `Status review ${sub.id} menjadi: ${newStatus}`, 'info');
-        loadSubmissionsFromCloud();
+      // Update data lokal
+      sub.statusReview = newStatus;
+
+      // Render ulang tabel admin seketika agar ikon & warna badge langsung berubah
+      renderApp();
+
+      // Update ke database Firestore secara akurat di latar belakang
+      db.collection("submissions").doc(docId).update({ 
+        statusReview: newStatus 
+      }).then(() => {
+        showToast('Berhasil', `Status review berhasil diperbarui menjadi ${newStatus}.`, 'info');
+      }).catch((err) => {
+        showToast('Gagal', 'Gagal memperbarui status review ke database.', 'error');
       });
     }
 
-    function updateDanaStatus(id, newStatus) {
+    function updateDanaStatus(docId, newStatus) {
       if (currentUser.role !== 'dmph') return;
-      const sub = submissions.find(s => s.id === id);
-      if (!sub || !sub.docId) return;
+      
+      // Cari data berdasarkan docId Firestore yang unik 100%
+      const sub = submissions.find(s => s.docId === docId);
+      if (!sub) {
+        showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
+        return;
+      }
 
-      db.collection("submissions").doc(sub.docId).update({ statusDana: newStatus }).then(() => {
-        showToast('Status Dana Diperbarui', `Status dana ${sub.id} menjadi: ${newStatus}`, 'success');
+      // Update tampilan lokal seketika
+      sub.statusDana = newStatus;
+
+      // Update ke database Firestore secara akurat
+      db.collection("submissions").doc(docId).update({ 
+        statusDana: newStatus 
+      }).then(() => {
+        showToast('Berhasil', `Status dana berhasil diperbarui menjadi ${newStatus}.`, 'success');
 
         triggerEmailNotification(
           sub.userEmail,
           `Pencairan Dana LASKAR: ${sub.namaEvent}`,
           `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Status pencairan dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah diperbarui menjadi:<br><br><span style="color:#166534; font-weight:bold; font-size:15px;">" ${newStatus} "</span>`
         );
-
-        loadSubmissionsFromCloud();
+      }).catch((err) => {
+        showToast('Gagal', 'Gagal memperbarui status dana ke database.', 'error');
       });
     }
 
