@@ -583,6 +583,7 @@
       const nominalLabel = document.getElementById('nominal-detail-label');
       const nominalInput = document.getElementById('nominalDetailInput');
 
+      // Pengaturan Nominal berdasarkan jenis ajuan
       if (value === 'Insentif') {
         nominalContainer.classList.remove('hidden');
         nominalLabel.innerHTML = `HTM Lomba <span class="text-red-600">*</span>`;
@@ -604,25 +605,30 @@
         nominalInput.removeAttribute('required');
       }
 
+      // Logika untuk menyembunyikan/menampilkan Capaian Juara & Rekening
+      if (value === 'Subsidi' || value === 'Transportasi' || value === 'Non-Juara' || value === 'Apresiasi/Non-Juara') {
+        // Jika Subsidi / Transportasi / Non-Juara, sembunyikan pilihan capaian/juara
+        if (juaraSection) juaraSection.classList.add('hidden');
+        if (juaraSelect) juaraSelect.removeAttribute('required');
+      } else {
+        // Jika Insentif, tampilkan kembali pilihan capaian/juara
+        if (juaraSection) juaraSection.classList.remove('hidden');
+        if (juaraSelect) juaraSelect.setAttribute('required', 'true');
+      }
+
+      // Pengaturan khusus Non-Juara (tanpa rekening pencairan dana prestasi)
       if (value === 'Non-Juara' || value === 'Apresiasi/Non-Juara') {
         if (rekeningSection) rekeningSection.classList.add('hidden');
         if (rekProvider) rekProvider.removeAttribute('required');
         if (rekNomor) rekNomor.removeAttribute('required');
         if (berkasNum) berkasNum.innerText = '3';
-
-        if (juaraSection) juaraSection.classList.add('hidden');
-        if (juaraSelect) juaraSelect.removeAttribute('required');
       } else {
         if (rekeningSection) rekeningSection.classList.remove('hidden');
         if (rekProvider) rekProvider.setAttribute('required', 'true');
         if (rekNomor) rekNomor.setAttribute('required', 'true');
         if (berkasNum) berkasNum.innerText = '4';
-
-        if (juaraSection) juaraSection.classList.remove('hidden');
-        if (juaraSelect) juaraSelect.setAttribute('required', 'true');
       }
     }
-
     function renderHistoryView() {
       const mySubmissions = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
 
