@@ -677,7 +677,7 @@
                   ` : mySubmissions.map((sub) => `
                     <tr class="hover:bg-slate-50/80 transition">
                       <td class="py-4 px-4 font-serif font-bold text-mpq-800">
-                        ${sub.id}
+                        ${sub.docId}
                         <p class="text-[10px] text-slate-400 font-serif font-normal mt-0.5">${sub.createdAt}</p>
                       </td>
                       <td class="py-4 px-4">
@@ -717,7 +717,7 @@
                       </td>
                       <td class="py-4 px-4 text-center">
                         ${sub.buktiTransferUrl ? `
-                          <button onclick="viewFile('Bukti_Transfer_${sub.id}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-emerald-300 shadow-sm">
+                          <button onclick="viewFile('Bukti_Transfer_${sub.docId}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-emerald-300 shadow-sm">
                             <i class="fa-solid fa-receipt text-emerald-700"></i> Cek TF
                           </button>
                         ` : `
@@ -725,7 +725,7 @@
                         `}
                       </td>
                       <td class="py-4 px-4 text-center">
-                        <button onclick="deleteSubmission('${sub.id}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
+                        <button onclick="deleteSubmission('${sub.docId}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
                           <i class="fa-solid fa-trash-can text-sm"></i>
                         </button>
                       </td>
@@ -996,7 +996,7 @@
                           <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bukti Transfer:</label>
                           ${sub.buktiTransferUrl ? `
                             <div class="flex items-center gap-1.5">
-                              <button onclick="viewFile('Bukti_Transfer_${sub.id}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="flex-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1">
+                              <button onclick="viewFile('Bukti_Transfer_${sub.docId}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="flex-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1">
                                 <i class="fa-solid fa-receipt"></i> Lihat TF
                               </button>
                               <label class="cursor-pointer px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200" title="Ganti Bukti Transfer">
@@ -1015,7 +1015,7 @@
 
                       <!-- Kolom 9: Tombol Hapus -->
                       <td class="py-4 px-4 text-center">
-                        <button onclick="deleteSubmission('${sub.id}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
+                        <button onclick="deleteSubmission('${sub.docId}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
                           <i class="fa-solid fa-trash-can text-sm"></i>
                         </button>
                       </td>
@@ -1354,7 +1354,7 @@
       });
     }
 
-    function deleteSubmission(id) {
+    function deleteSubmission(docId) {
       const sub = submissions.find(s => s.id === id);
       if (!sub || !sub.docId) return;
 
