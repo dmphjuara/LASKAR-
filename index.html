@@ -179,7 +179,7 @@
     const MPQ_LOGO_HTML = `<img src="logo-mpq.png" alt="Logo MPQ UMS" class="w-full h-full object-contain" onError="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-book-quran text-mpq-900 text-2xl\'></i>';" />`;
 
     const ACCOUNTS = [
-      { email: 'dmphjuara@gmail.com', pass: 'dmphjuara45!', name: "DMPH(Sekretariat)", nim: "PENGURUS-DMPH", role: 'dmph' }
+      { email: 'dmphjuara@gmail.com', pass: 'dmphjuara45!', name: "DMPH JUARA", nim: "PENGURUS-DMPH", role: 'dmph' }
     ];
 
     let sessionToken = localStorage.getItem('LASKAR_SESSION_TOKEN') || null;
@@ -190,6 +190,7 @@
     let currentActiveFile = null;
     let selectedFileName = '';
     let selectedFileUrl = '';
+    let currentStatCategory = 'capaian'; // State untuk tab grafik histogram DMPH
 
     function createEncryptedToken(user) {
       const payload = {
@@ -243,15 +244,16 @@
         return;
       }
 
+      // KUNCI PENTING: Pengkondisian Navigasi Menu DMPH & Mahasiswa
       if (currentUser.role === 'mahasiswa' && currentTab === 'dmph_review') {
         currentTab = 'form';
-      } else if (currentUser.role === 'dmph' && currentTab !== 'dmph_review') {
+      } else if (currentUser.role === 'dmph' && (currentTab !== 'dmph_review' && currentTab !== 'statistics')) {
         currentTab = 'dmph_review';
       }
 
       app.innerHTML = `
         <header class="bg-gradient-to-r from-mpq-900 via-mpq-800 to-emerald-950 text-white shadow-xl border-b-4 border-gold-500 sticky top-0 z-40 backdrop-blur-md">
-          <div class="max-w-7xl mx-auto px-6 py-3.5 flex justify-between items-center">
+          <div class="max-w-[95%] mx-auto px-4 py-3.5 flex justify-between items-center">
             <div class="flex items-center space-x-3.5">
               <div class="w-12 h-12 bg-white p-1 rounded-2xl shadow-md flex-shrink-0 flex items-center justify-center border-2 border-gold-400 overflow-hidden">
                 ${MPQ_LOGO_HTML}
@@ -265,7 +267,7 @@
             <div class="flex items-center space-x-4">
               <div class="hidden sm:flex flex-col text-right">
                 <span class="text-sm font-bold text-white">${currentUser.name}</span>
-                <span class="text-xs text-gold-400 font-medium">${currentUser.role === 'dmph' ? 'Otoritas DMPH' : currentUser.nim}</span>
+                <span class="text-xs text-gold-400 font-medium">${currentUser.role === 'dmph' ? 'Wilayah DMPH' : currentUser.nim}</span>
               </div>
               <div class="h-8 w-px bg-emerald-700/60"></div>
               <button onclick="handleLogout()" class="px-3.5 py-2 bg-red-600/90 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center space-x-1.5">
@@ -276,7 +278,7 @@
           </div>
         </header>
 
-        <div class="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto">
+        <div class="flex-1 flex flex-col md:flex-row w-full mx-auto">
           <aside class="w-full md:w-72 bg-white/80 backdrop-blur-md text-slate-700 flex-shrink-0 border-r border-slate-200/80 flex flex-col p-4 shadow-sm">
             <div class="space-y-4">
               <div class="bg-gradient-to-br from-emerald-900 to-mpq-900 text-white rounded-2xl p-4 shadow-md border border-emerald-700/50 flex items-center space-x-3.5">
@@ -290,7 +292,7 @@
               </div>
 
               <div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">Navigasi Menu</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">Menu</p>
                 <div class="space-y-1.5">
                   ${currentUser.role === 'mahasiswa' ? `
                     <button onclick="switchTab('form')" class="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-between ${currentTab === 'form' ? 'bg-mpq-800 text-gold-400 shadow-md shadow-mpq-900/10' : 'hover:bg-slate-100 text-slate-600'}">
@@ -321,6 +323,12 @@
                       </div>
                       <span class="bg-gold-500 text-mpq-900 text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">${submissions.length}</span>
                     </button>
+                    <button onclick="switchTab('statistics')" class="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-between ${currentTab === 'statistics' ? 'bg-mpq-800 text-gold-400 shadow-md shadow-mpq-900/10' : 'hover:bg-slate-100 text-slate-600'}">
+                      <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-chart-column text-base"></i>
+                        <span>Statistik & Histogram</span>
+                      </div>
+                    </button>
                   ` : ''}
                 </div>
               </div>
@@ -334,7 +342,7 @@
             </div>
           </aside>
 
-          <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+          <main class="flex-1 p-4 sm:p-6 overflow-y-auto custom-scrollbar">
             ${renderMainContent()}
           </main>
         </div>
@@ -410,8 +418,9 @@
       if (currentUser.role === 'mahasiswa') {
         if (currentTab === 'form') return renderFormSubmission();
         if (currentTab === 'history') return renderHistoryView();
-        if (currentTab === 'statistics') return renderStatisticsView();
+        if (currentTab === 'statistics') return renderMahasiswaStatisticsView(); // SETELAN AWAL MAHASISWA
       } else if (currentUser.role === 'dmph') {
+        if (currentTab === 'statistics') return renderDmphHistogramView(); // HISTOGRAM KHUSUS DMPH
         return renderDmphAdminView();
       }
       return `<div class="p-4 text-red-600">Akses Tidak Diberikan</div>`;
@@ -439,7 +448,7 @@
               </h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/60 p-5 rounded-2xl border border-slate-200/60">
                 <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap Mahasiswa <span class="text-red-600">*</span></label>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap<span class="text-red-600">*</span></label>
                   <input type="text" id="formNamaMahasiswa" required value="${currentUser.name.includes('MAHASISWA (') ? '' : currentUser.name}" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-mpq-600 outline-none shadow-sm" placeholder="Masukkan Nama Lengkap">
                 </div>
                 <div>
@@ -478,7 +487,7 @@
 
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Nama Cabang Lomba <span class="text-red-600">*</span></label>
-                  <input type="text" id="namaCabang" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: MHQ 10 Juz">
+                  <input type="text" id="namaCabang" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Contoh: MHQ 10 Juz">
                 </div>
 
                 <div>
@@ -494,8 +503,8 @@
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Jenis Kompetisi <span class="text-red-600">*</span></label>
                   <select id="jenisKompetisi" onchange="toggleTeamFields(this.value)" required class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none bg-white shadow-sm">
-                    <option value="Individu">Individu / Perorangan</option>
-                    <option value="Kelompok/Tim">Kelompok / Tim</option>
+                    <option value="Individu">Individu</option>
+                    <option value="Tim">Tim</option>
                   </select>
                 </div>
 
@@ -510,9 +519,9 @@
                 </div>
               </div>
 
-              <!-- Bagian Tim/Kelompok -->
+              <!-- Bagian Tim -->
               <div id="team-section" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 mt-3">
-                <p class="text-xs font-bold text-slate-700 uppercase">Detail Kelompok / Tim</p>
+                <p class="text-xs font-bold text-slate-700 uppercase">Detail Tim</p>
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">Nama Anggota Tim <span class="text-red-600">*</span></label>
                   <input type="text" id="namaTim" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl bg-white shadow-sm" placeholder="Contoh: Fulan A, Fulan B, dan Fulan C">
@@ -583,7 +592,6 @@
       const nominalLabel = document.getElementById('nominal-detail-label');
       const nominalInput = document.getElementById('nominalDetailInput');
 
-      // Pengaturan Nominal berdasarkan jenis ajuan
       if (value === 'Insentif') {
         nominalContainer.classList.remove('hidden');
         nominalLabel.innerHTML = `HTM Lomba <span class="text-red-600">*</span>`;
@@ -605,18 +613,14 @@
         nominalInput.removeAttribute('required');
       }
 
-      // Logika untuk menyembunyikan/menampilkan Capaian Juara & Rekening
       if (value === 'Subsidi' || value === 'Transportasi' || value === 'Non-Juara' || value === 'Apresiasi/Non-Juara') {
-        // Jika Subsidi / Transportasi / Non-Juara, sembunyikan pilihan capaian/juara
         if (juaraSection) juaraSection.classList.add('hidden');
         if (juaraSelect) juaraSelect.removeAttribute('required');
       } else {
-        // Jika Insentif, tampilkan kembali pilihan capaian/juara
         if (juaraSection) juaraSection.classList.remove('hidden');
         if (juaraSelect) juaraSelect.setAttribute('required', 'true');
       }
 
-      // Pengaturan khusus Non-Juara (tanpa rekening pencairan dana prestasi)
       if (value === 'Non-Juara' || value === 'Apresiasi/Non-Juara') {
         if (rekeningSection) rekeningSection.classList.add('hidden');
         if (rekProvider) rekProvider.removeAttribute('required');
@@ -629,6 +633,7 @@
         if (berkasNum) berkasNum.innerText = '4';
       }
     }
+
     function renderHistoryView() {
       const mySubmissions = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
 
@@ -639,7 +644,7 @@
               <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
                 <i class="fa-solid fa-clock-rotate-left text-mpq-700 text-lg"></i> Riwayat Pengajuan Saya
               </h2>
-              <p class="text-xs text-slate-500 mt-1">Daftar pengajuan aktif atas akun: <strong class="text-mpq-800 font-serif">${currentUser.email}</strong></p>
+              <p class="text-xs text-slate-500 mt-1">Daftar pengajuan akun: <strong class="text-mpq-800 font-serif">${currentUser.email}</strong></p>
             </div>
             <button onclick="switchTab('form')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-mpq-900/20 flex items-center gap-2">
               <i class="fa-solid fa-plus"></i> Buat Ajuan Baru
@@ -654,20 +659,21 @@
                     <th class="py-3.5 px-4">ID / Tanggal</th>
                     <th class="py-3.5 px-4">Jenis Ajuan</th>
                     <th class="py-3.5 px-4">Nominal</th>
-                    <th class="py-3.5 px-4">Event Lomba</th>
+                    <th class="py-3.5 px-4">Event & Cabang</th>
+                    <th class="py-3.5 px-4">Kompetisi</th>
                     <th class="py-3.5 px-4">Capaian</th>
                     <th class="py-3.5 px-4">Rekening Tujuan</th>
                     <th class="py-3.5 px-4">Status Review</th>
                     <th class="py-3.5 px-4">Status Dana</th>
-                    <th class="py-3.5 px-4 text-center">Bukti Keikutsertaan</th>
-                    <th class="py-3.5 px-4 text-center">Bukti Transfer</th>
-                    <th class="py-3.5 px-4 text-center">Sampah</th>
+                    <th class="py-3.5 px-4 text-center">Bukti</th>
+                    <th class="py-3.5 px-4 text-center">Cek TF</th>
+                    <th class="py-3.5 px-4 text-center">Hapus</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                   ${mySubmissions.length === 0 ? `
                     <tr>
-                      <td colspan="11" class="py-16 text-center text-slate-400">
+                      <td colspan="12" class="py-16 text-center text-slate-400">
                         <div class="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
                           <i class="fa-solid fa-box-open"></i>
                         </div>
@@ -677,7 +683,7 @@
                   ` : mySubmissions.map((sub) => `
                     <tr class="hover:bg-slate-50/80 transition">
                       <td class="py-4 px-4 font-serif font-bold text-mpq-800">
-                        ${sub.docId}
+                        ${sub.docId ? sub.docId.substring(0, 8) + '...' : '-'}
                         <p class="text-[10px] text-slate-400 font-serif font-normal mt-0.5">${sub.createdAt}</p>
                       </td>
                       <td class="py-4 px-4">
@@ -690,7 +696,13 @@
                       </td>
                       <td class="py-4 px-4">
                         <p class="font-bold text-slate-900">${sub.namaEvent}</p>
-                        <p class="text-[11px] text-slate-500 mt-0.5">${sub.namaCabang ? sub.namaCabang + ' • ' : ''}${sub.penyelenggara || ''}</p>
+                        <p class="text-[11px] text-emerald-700 font-bold mt-0.5"><i class="fa-solid fa-tag"></i> ${sub.namaCabang || '-'}</p>
+                      </td>
+                      <td class="py-4 px-4">
+                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${(sub.jenisKompetisi === 'Tim' || sub.jenisKompetisi === 'Kelompok/Tim' || sub.jenisKompetisi === 'Kelompok') ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+                          ${sub.jenisKompetisi || 'Individu'}
+                        </span>
+                        ${((sub.jenisKompetisi === 'Tim' || sub.jenisKompetisi === 'Kelompok/Tim' || sub.jenisKompetisi === 'Kelompok') && sub.namaTim) ? `<p class="text-[10px] text-slate-500 mt-1 italic">Tim: ${sub.namaTim}</p>` : ''}
                       </td>
                       <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
@@ -701,7 +713,7 @@
                       <td class="py-4 px-4">
                         ${sub.rekeningProvider ? `
                           <span class="text-[11px] font-bold text-slate-800">${sub.rekeningProvider}</span>
-                          <p class="text-[11px] font-seriftext-slate-500 mt-0.5">${sub.nomorRekening}</p>
+                          <p class="text-[11px] font-serif text-slate-500 mt-0.5">${sub.nomorRekening}</p>
                         ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
                       </td>
                       <td class="py-4 px-4">
@@ -739,14 +751,14 @@
       `;
     }
 
-    function renderStatisticsView() {
+    // 1. STATISTIK MAHASISWA (SETELAN AWAL AWAL)
+    function renderMahasiswaStatisticsView() {
       const mySubs = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
       
       const totalAjuan = mySubs.length;
       const totalJuara1 = mySubs.filter(s => s.juara === 'Juara 1' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
       const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
       const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
-      
       const totalNonJuara = mySubs.filter(s => s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
 
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
@@ -760,14 +772,13 @@
               <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
                 <i class="fa-solid fa-chart-pie text-gold-500 text-lg"></i> Statistik & Grafik Prestasi Saya
               </h2>
-              <p class="text-xs text-slate-500 mt-1">Ringkasan capaian dan rekapitulasi data pengajuan akun: <strong class="text-mpq-800 font-serif">${currentUser.email}</strong></p>
+              <p class="text-xs text-slate-500 mt-1">Ringkasan capaian dan rekapitulasi pengajuan akun: <strong class="text-mpq-800 font-serif">${currentUser.email}</strong></p>
             </div>
             <button onclick="switchTab('form')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-mpq-900/20 flex items-center gap-2">
               <i class="fa-solid fa-plus"></i> Buat Ajuan Baru
             </button>
           </div>
 
-          <!-- Metric Cards Grid -->
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
               <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-xl font-bold shadow-inner">
@@ -810,7 +821,6 @@
             </div>
           </div>
 
-          <!-- Visual Breakdown Cards -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
               <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -838,7 +848,7 @@
 
             <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
               <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
-                <i class="fa-solid fa-circle-check text-mpq-800"></i> Status Pemrosesan Dana
+                <i class="fa-solid fa-circle-check text-mpq-800"></i> Status Dana
               </h3>
               <div class="space-y-3 pt-2">
                 <div>
@@ -860,15 +870,130 @@
       `;
     }
 
+    // 2. STATISTIK HISTOGRAM KHUSUS PANEL DMPH (WARNA-WARNI KATEGORI)
+    function renderDmphHistogramView() {
+      const dataSet = submissions;
+      const totalAjuan = dataSet.length;
+
+      // Data Histogram per Kategori
+      let histogramItems = [];
+
+      if (currentStatCategory === 'capaian') {
+        const c1 = dataSet.filter(s => s.juara === 'Juara 1').length;
+        const c2 = dataSet.filter(s => s.juara === 'Juara 2').length;
+        const c3 = dataSet.filter(s => s.juara === 'Juara 3').length;
+        const cN = dataSet.filter(s => s.juara.includes('Non-Juara') || s.jenisAjuan === 'Non-Juara').length;
+        histogramItems = [
+          { label: 'Juara 1', count: c1, color: 'bg-gradient-to-t from-amber-600 to-amber-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
+          { label: 'Juara 2', count: c2, color: 'bg-gradient-to-t from-slate-600 to-slate-400', badge: 'bg-slate-100 text-slate-800 border-slate-300' },
+          { label: 'Juara 3', count: c3, color: 'bg-gradient-to-t from-amber-800 to-amber-600', badge: 'bg-amber-200 text-amber-950 border-amber-400' },
+          { label: 'Non-Juara / Peserta', count: cN, color: 'bg-gradient-to-t from-teal-700 to-teal-400', badge: 'bg-teal-100 text-teal-900 border-teal-300' }
+        ];
+      } else if (currentStatCategory === 'jenis') {
+        const j1 = dataSet.filter(s => s.jenisAjuan === 'Insentif').length;
+        const j2 = dataSet.filter(s => s.jenisAjuan === 'Subsidi').length;
+        const j3 = dataSet.filter(s => s.jenisAjuan === 'Transportasi').length;
+        const j4 = dataSet.filter(s => s.jenisAjuan === 'Non-Juara').length;
+        histogramItems = [
+          { label: 'Insentif', count: j1, color: 'bg-gradient-to-t from-emerald-800 to-emerald-500', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+          { label: 'Subsidi', count: j2, color: 'bg-gradient-to-t from-blue-800 to-blue-500', badge: 'bg-blue-100 text-blue-900 border-blue-300' },
+          { label: 'Transportasi', count: j3, color: 'bg-gradient-to-t from-purple-800 to-purple-500', badge: 'bg-purple-100 text-purple-900 border-purple-300' },
+          { label: 'Non-Juara', count: j4, color: 'bg-gradient-to-t from-rose-700 to-rose-400', badge: 'bg-rose-100 text-rose-900 border-rose-300' }
+        ];
+      } else if (currentStatCategory === 'level') {
+        const l1 = dataSet.filter(s => s.level === 'Provinsi').length;
+        const l2 = dataSet.filter(s => s.level === 'Nasional').length;
+        const l3 = dataSet.filter(s => s.level === 'Internasional').length;
+        histogramItems = [
+          { label: 'Provinsi', count: l1, color: 'bg-gradient-to-t from-cyan-700 to-cyan-400', badge: 'bg-cyan-100 text-cyan-900 border-cyan-300' },
+          { label: 'Nasional', count: l2, color: 'bg-gradient-to-t from-mpq-900 to-mpq-600', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+          { label: 'Internasional', count: l3, color: 'bg-gradient-to-t from-gold-600 to-gold-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
+        ];
+      }
+
+      const maxCount = Math.max(...histogramItems.map(i => i.count), 1);
+
+      return `
+        <div class="max-w-6xl mx-auto space-y-6">
+          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
+                <i class="fa-solid fa-chart-column text-gold-500 text-lg"></i> Histogram
+              </h2>
+            </div>
+            <button onclick="switchTab('dmph_review')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-mpq-900/20 flex items-center gap-2">
+              <i class="fa-solid fa-list-check"></i> Kembali ke Tabel Review
+            </button>
+          </div>
+
+          <!-- Pilihan Kategori Grafik Interaktif DMPH -->
+          <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200/80 flex flex-wrap gap-3 items-center justify-between">
+            <span class="text-xs font-bold text-slate-600 uppercase pl-2"><i class="fa-solid fa-filter text-mpq-700"></i> Kategori:</span>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="setStatCategory('capaian')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'capaian' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
+                <i class="fa-solid fa-trophy mr-1"></i> Capaian / Juara
+              </button>
+              <button onclick="setStatCategory('jenis')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'jenis' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
+                <i class="fa-solid fa-tags mr-1"></i> Jenis Ajuan
+              </button>
+              <button onclick="setStatCategory('level')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'level' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
+                <i class="fa-solid fa-globe mr-1"></i> Level Kompetisi
+              </button>
+            </div>
+          </div>
+
+          <!-- HISTOGRAM VERTIKAL INTERAKTIF BERWARNA-WARNI -->
+          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
+            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-4">
+              <span><i class="fa-solid fa-chart-bar text-mpq-800 mr-2"></i> Grafik Histogram ${currentStatCategory.toUpperCase()}</span>
+              <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">Total: ${totalAjuan} Pengajuan</span>
+            </h3>
+
+            <div class="h-64 flex items-end justify-around gap-4 pt-8 pb-4 border-b border-slate-200">
+              ${histogramItems.map(item => {
+                const heightPercent = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                return `
+                  <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                    <!-- Angka Jumlah Pengajuan di Atas Batang -->
+                    <span class="text-xs font-bold text-slate-800 mb-2 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-sm transition transform group-hover:-translate-y-1">
+                      ${item.count}
+                    </span>
+                    <!-- Batang Histogram Berwarna-warni -->
+                    <div class="w-full max-w-[64px] ${item.color} rounded-t-2xl shadow-md transition-all duration-500 ease-out group-hover:brightness-110" style="height: ${heightPercent > 0 ? heightPercent : 4}%;"></div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Label Kategori di Bawah Batang Histogram -->
+            <div class="flex justify-around gap-4 text-center">
+              ${histogramItems.map(item => `
+                <div class="flex-1 flex flex-col items-center">
+                  <span class="text-xs font-bold px-3 py-1 rounded-xl border ${item.badge} shadow-sm">
+                    ${item.label}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setStatCategory(cat) {
+      currentStatCategory = cat;
+      renderApp();
+    }
+
     function renderDmphAdminView() {
       return `
-        <div class="max-w-7xl mx-auto space-y-6">
+        <div class="w-full space-y-6">
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
                 <i class="fa-solid fa-user-shield text-gold-500 text-lg"></i> Review DMPH
               </h2>
-              <p class="text-xs text-slate-500 mt-1">Otoritas peninjauan dan verifikasi pengajuan seluruh mahasiswa.</p>
+              <p class="text-xs text-slate-500 mt-1">peninjauan dan verifikasi pengajuan seluruh mahasiswa.</p>
             </div>
             <div class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-2xl text-xs text-emerald-900 font-bold flex items-center gap-2">
               <i class="fa-solid fa-database text-emerald-600"></i>
@@ -876,10 +1001,21 @@
             </div>
           </div>
 
-          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Filter Bar Admin -->
+          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1.5">Cari Nama / NIM / Event</label>
               <input type="text" id="adminSearch" onkeyup="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-mpq-700 shadow-sm" placeholder="Ketik kata kunci...">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Jenis Ajuan</label>
+              <select id="adminFilterJenis" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
+                <option value="ALL">Semua Jenis Ajuan</option>
+                <option value="Insentif">Insentif</option>
+                <option value="Subsidi">Subsidi</option>
+                <option value="Transportasi">Transportasi</option>
+                <option value="Non-Juara">Non-Juara</option>
+              </select>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Status Review</label>
@@ -901,6 +1037,7 @@
             </div>
           </div>
 
+          <!-- Tabel Melebar Full-Width Tanpa Scroll Samping Berlebih -->
           <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse" id="admin-table">
@@ -909,28 +1046,31 @@
                     <th class="py-3.5 px-4">Pengusul & Event</th>
                     <th class="py-3.5 px-4">Jenis Ajuan</th>
                     <th class="py-3.5 px-4">Nominal</th>
-                    <th class="py-3.5 px-4">Capaian</th>
+                    <th class="py-3.5 px-4">Cabang Lomba</th>
+                    <th class="py-3.5 px-4">Jenis Kompetisi</th>
+                    <th class="py-3.5 px-4">Capaian & Level</th>
                     <th class="py-3.5 px-4">Rekening Tujuan</th>
-                    <th class="py-3.5 px-4">Bukti Keikutsertaan</th>
+                    <th class="py-3.5 px-4">Berkas / Cek</th>
                     <th class="py-3.5 px-4">Status Review</th>
-                    <th class="py-3.5 px-4">Status Dana & Bukti Transfer</th>
-                    <th class="py-3.5 px-4 text-center">Sampah</th>
+                    <th class="py-3.5 px-4">Status Dana & TF</th>
+                    <th class="py-3.5 px-4 text-center">Hapus</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                   ${submissions.length === 0 ? `
                     <tr>
-                      <td colspan="9" class="py-16 text-center text-slate-400">
+                      <td colspan="11" class="py-16 text-center text-slate-400">
                         Belum ada berkas pengajuan yang masuk ke sistem DMPH.
                       </td>
                     </tr>
                   ` : submissions.map((sub) => `
-                    <tr class="hover:bg-slate-50/80 transition submission-row" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()}" data-review="${sub.statusReview}" data-dana="${sub.statusDana}">
+                    <tr class="hover:bg-slate-50/80 transition submission-row" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()} ${sub.namaCabang ? sub.namaCabang.toLowerCase() : ''}" data-jenis="${sub.jenisAjuan || 'Insentif'}" data-review="${sub.statusReview}" data-dana="${sub.statusDana}">
                       <!-- Kolom 1: Pengusul & Event -->
                       <td class="py-4 px-4">
                         <p class="font-bold text-slate-900 text-sm">${sub.pengusulName}</p>
-                        <p class="text-[11px] font-seriftext-slate-500">${sub.pengusulNim}</p>
+                        <p class="text-[11px] font-serif text-slate-500">${sub.pengusulNim}</p>
                         <p class="font-bold text-xs text-mpq-800 mt-1">${sub.namaEvent}</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">${sub.createdAt}</p>
                       </td>
 
                       <!-- Kolom 2: Jenis Ajuan -->
@@ -945,30 +1085,48 @@
                         ${sub.nominalDetail ? `Rp ${sub.nominalDetail}` : '<span class="text-slate-400 font-normal italic">-</span>'}
                       </td>
 
-                      <!-- Kolom 4: Capaian -->
+                      <!-- Kolom 4: Cabang Lomba -->
+                      <td class="py-4 px-4">
+                        <span class="font-bold text-slate-800">${sub.namaCabang || '-'}</span>
+                      </td>
+
+                      <!-- Kolom 5: Jenis Kompetisi & Anggota Tim -->
+                      <td class="py-4 px-4">
+                        <span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold ${(sub.jenisKompetisi === 'Tim' || sub.jenisKompetisi === 'Kelompok/Tim' || sub.jenisKompetisi === 'Kelompok') ? 'bg-purple-100 text-purple-900 border border-purple-200' : 'bg-blue-100 text-blue-900 border border-blue-200'}">
+                          ${sub.jenisKompetisi || 'Individu'}
+                        </span>
+                        ${((sub.jenisKompetisi === 'Tim' || sub.jenisKompetisi === 'Kelompok/Tim' || sub.jenisKompetisi === 'Kelompok') && sub.namaTim) ? `
+                          <div class="mt-1.5 p-2 bg-slate-50 rounded-xl border border-slate-200 text-[10px] text-slate-600 leading-tight">
+                            <span class="font-bold text-purple-900 block mb-0.5"><i class="fa-solid fa-users"></i> Anggota Tim:</span>
+                            ${sub.namaTim}
+                          </div>
+                        ` : ''}
+                      </td>
+
+                      <!-- Kolom 6: Capaian & Level -->
                       <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
                           ${sub.juara}
                         </span>
-                        <p class="text-[10px] text-slate-500">${sub.level}</p>
+                        <p class="text-[10px] text-slate-500 font-bold"><i class="fa-solid fa-globe"></i> Level: ${sub.level}</p>
                       </td>
 
-                      <!-- Kolom 5: Rekening Tujuan -->
+                      <!-- Kolom 7: Rekening Tujuan -->
                       <td class="py-4 px-4">
                         ${sub.rekeningProvider ? `
                           <span class="font-bold text-slate-900">${sub.rekeningProvider}</span>
-                          <p class="text-xs font-seriftext-slate-500 mt-0.5">${sub.nomorRekening}</p>
+                          <p class="text-xs font-serif text-slate-500 mt-0.5">${sub.nomorRekening}</p>
                         ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
                       </td>
 
-                      <!-- Kolom 6: Berkas -->
+                      <!-- Kolom 8: Berkas Cek -->
                       <td class="py-4 px-4">
                         <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}', 'Sertifikat / Bukti Keikutsertaan')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
                           <i class="fa-solid fa-file-image text-emerald-600"></i> Cek Berkas
                         </button>
                       </td>
 
-                      <!-- Kolom 7: Status Review -->
+                      <!-- Kolom 9: Status Review -->
                       <td class="py-4 px-4 space-y-2">
                         ${renderBadgeReview(sub.statusReview)}
                         <div>
@@ -980,8 +1138,8 @@
                         </div>
                       </td>
 
-                      <!-- Kolom 8: Status Dana & Upload Bukti Transfer -->
-                      <td class="py-4 px-4 space-y-2.5 min-w-[180px]">
+                      <!-- Kolom 10: Status Dana & Upload Bukti Transfer -->
+                      <td class="py-4 px-4 space-y-2.5 min-w-[170px]">
                         ${renderBadgeDana(sub.statusDana)}
                         <div>
                           <select onchange="updateDanaStatus('${sub.docId}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
@@ -991,7 +1149,6 @@
                           </select>
                         </div>
                         
-                        <!-- Fitur Upload Bukti Transfer oleh Admin -->
                         <div class="pt-1 border-t border-slate-100">
                           <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bukti Transfer:</label>
                           ${sub.buktiTransferUrl ? `
@@ -1013,7 +1170,7 @@
                         </div>
                       </td>
 
-                      <!-- Kolom 9: Tombol Hapus -->
+                      <!-- Kolom 11: Tombol Hapus -->
                       <td class="py-4 px-4 text-center">
                         <button onclick="deleteSubmission('${sub.docId}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
                           <i class="fa-solid fa-trash-can text-sm"></i>
@@ -1031,13 +1188,12 @@
 
     function renderBadgeReview(status) {
       const st = (status || '').trim();
-
       if (st === 'Sudah Direview' || st === 'Disetujui') {
         return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
       } else if (st === 'Perlu Revisi') {
         return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-emerald-200"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perlu Revisi</span>`;
       } else {
-        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-200"><i class="fa-solid fa-circle-xmark text-rose-600"></i> Belum Direview</span>`;
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-emerald-200"><i class="fa-solid fa-circle-xmark text-rose-600"></i> Belum Direview</span>`;
       }
     }
 
@@ -1062,7 +1218,6 @@
 
       if (emailInput.endsWith('@student.ums.ac.id')) {
         const nimExtract = emailInput.split('@')[0].toUpperCase();
-        
         let account = ACCOUNTS.find(a => a.email.toLowerCase() === emailInput);
         if (!account) {
           account = {
@@ -1117,20 +1272,18 @@
     }
 
     function toggleTeamFields(value) {
-      const section = document.getElementById('team-section');
-      if (value === 'Kelompok/Tim') {
-        section.classList.remove('hidden');
-      } else {
-        section.classList.add('hidden');
-      }
-    }
+  const section = document.getElementById('team-section');
+  if (value === 'Tim' || value === 'Kelompok' || value === 'Kelompok/Tim') {
+    section.classList.remove('hidden');
+  } else {
+    section.classList.add('hidden');
+  }
+}
 
-    // Fungsi kompresi gambar sertifikat otomatis
     function handleFileSelect(e) {
       const files = e.target.files;
       if (files.length > 0) {
         const file = files[0];
-
         if (file.type === 'application/pdf') {
           showToast('PDF Tidak Diizinkan', 'Harap unggah bukti berupa foto/gambar (JPG, JPEG, PNG).', 'error');
           e.target.value = '';
@@ -1141,7 +1294,6 @@
         }
 
         selectedFileName = file.name;
-
         const reader = new FileReader();
         reader.onload = function(evt) {
           const img = new Image();
@@ -1170,18 +1322,16 @@
           img.src = evt.target.result;
         };
         reader.readAsDataURL(file);
-
         document.getElementById('file-label').innerHTML = `<span class="text-mpq-800 font-bold"><i class="fa-solid fa-file-image"></i> Terpilih: ${selectedFileName}</span>`;
       }
     }
 
-    // Fungsi Khusus Admin Upload Bukti Transfer
-    function uploadBuktiTransfer(submissionId, e) {
+    function uploadBuktiTransfer(docId, e) {
       const files = e.target.files;
       if (files.length > 0) {
         const file = files[0];
-        const sub = submissions.find(s => s.id === submissionId);
-        if (!sub || !sub.docId) return;
+        const sub = submissions.find(s => s.docId === docId);
+        if (!sub) return;
 
         showToast('Memproses', 'Mengkompresi dan mengunggah bukti transfer...', 'info');
 
@@ -1209,20 +1359,16 @@
 
             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
 
-            // Update ke database Firestore
             db.collection("submissions").doc(sub.docId).update({ 
               buktiTransferUrl: compressedBase64,
-              statusDana: 'Dana Dicairkan' // Otomatis ubah status menjadi Dana Dicairkan saat struk di-upload
+              statusDana: 'Dana Dicairkan'
             }).then(() => {
               showToast('Berhasil!', 'Bukti transfer berhasil diunggah ke sistem.', 'success');
-              
-              // Kirim Notifikasi Email Otomatis ke Mahasiswa
               triggerEmailNotification(
                 sub.userEmail,
                 `Dana LASKAR Telah Dicairkan: ${sub.namaEvent}`,
-                `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah ditransfer ke rekening / e-wallet Anda. Silakan cek menu <strong>Riwayat Saya</strong> pada web LASKAR untuk melihat bukti transfernya.<br><br>Barakallahu fiikum.`
+                `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah ditransfer ke rekening / e-wallet Anda.`
               );
-
               loadSubmissionsFromCloud();
             }).catch(err => {
               showToast('Gagal', 'Gagal menyimpan bukti transfer ke database.', 'error');
@@ -1234,10 +1380,8 @@
       }
     }
 
-    // DISIMPAN KE CLOUD FIRESTORE
     function handleFormSubmit(e) {
       e.preventDefault();
-
       if (!selectedFileUrl) {
         showToast('Peringatan', 'Silakan pilih foto sertifikat/bukti terlebih dahulu.', 'error');
         return;
@@ -1258,8 +1402,15 @@
         submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan Data...`;
       }
 
+      // Waktu Real-Time Lokal yang Akurat
+      const now = new Date();
+      const formattedDate = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0');
+
       const newSub = {
-        id: 'LASKAR-' + (800 + submissions.length + 1),
         userEmail: currentUser.email,
         pengusulName: currentUser.name,
         pengusulNim: currentUser.nim,
@@ -1276,17 +1427,16 @@
         nomorRekening: isNonRek ? '' : (document.getElementById('nomorRekening') ? document.getElementById('nomorRekening').value : ''),
         sertifikatName: selectedFileName,
         fileUrl: selectedFileUrl, 
-        buktiTransferUrl: '', // Kosong saat awal diajukan
+        buktiTransferUrl: '',
         statusReview: 'Belum Direview',
         statusDana: isNonRek ? 'Selesai' : 'Belum Diproses',
         catatanAdmin: '',
-        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+        createdAt: formattedDate
       };
 
       db.collection("submissions").add(newSub).then(() => {
         selectedFileName = '';
         selectedFileUrl = '';
-
         showToast('Pengajuan Berhasil!', 'Data telah tersimpan di cloud database.', 'success');
         currentTab = 'history';
         loadSubmissionsFromCloud();
@@ -1302,24 +1452,17 @@
 
     function updateReviewStatus(docId, newStatus) {
       if (currentUser.role !== 'dmph') return;
-      
       const sub = submissions.find(s => s.docId === docId);
       if (!sub) {
         showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
         return;
       }
-
-      // Update data lokal
       sub.statusReview = newStatus;
-
-      // Render ulang tabel admin seketika agar ikon & warna badge langsung berubah
       renderApp();
-
-      // Update ke database Firestore secara akurat di latar belakang
       db.collection("submissions").doc(docId).update({ 
         statusReview: newStatus 
       }).then(() => {
-        showToast('Berhasil', `Status review berhasil diperbarui menjadi ${newStatus}.`, 'info');
+        showToast('Berhasil', `Status review diperbarui menjadi ${newStatus}.`, 'info');
       }).catch((err) => {
         showToast('Gagal', 'Gagal memperbarui status review ke database.', 'error');
       });
@@ -1327,27 +1470,20 @@
 
     function updateDanaStatus(docId, newStatus) {
       if (currentUser.role !== 'dmph') return;
-      
-      // Cari data berdasarkan docId Firestore yang unik 100%
       const sub = submissions.find(s => s.docId === docId);
       if (!sub) {
         showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
         return;
       }
-
-      // Update tampilan lokal seketika
       sub.statusDana = newStatus;
-
-      // Update ke database Firestore secara akurat
       db.collection("submissions").doc(docId).update({ 
         statusDana: newStatus 
       }).then(() => {
-        showToast('Berhasil', `Status dana berhasil diperbarui menjadi ${newStatus}.`, 'success');
-
+        showToast('Berhasil', `Status dana diperbarui menjadi ${newStatus}.`, 'success');
         triggerEmailNotification(
           sub.userEmail,
           `Pencairan Dana LASKAR: ${sub.namaEvent}`,
-          `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Status pencairan dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah diperbarui menjadi:<br><br><span style="color:#166534; font-weight:bold; font-size:15px;">" ${newStatus} "</span>`
+          `Status pencairan dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah diperbarui menjadi: <strong>${newStatus}</strong>`
         );
       }).catch((err) => {
         showToast('Gagal', 'Gagal memperbarui status dana ke database.', 'error');
@@ -1355,13 +1491,11 @@
     }
 
     function deleteSubmission(docId) {
-      // Ubah pencarian dari s.id menjadi s.docId agar sinkron
       const sub = submissions.find(s => s.docId === docId);
       if (!sub) {
-        showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
+        showToast('Error', 'Data pengajuan tidak ditemukan.', 'error');
         return;
       }
-
       if (confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')) {
         db.collection("submissions").doc(docId).delete().then(() => {
           showToast('Berhasil Dihapus', `Data pengajuan telah dihapus dari cloud.`, 'success');
@@ -1374,20 +1508,23 @@
 
     function filterAdminTable() {
       const search = document.getElementById('adminSearch').value.toLowerCase();
+      const jenisFilter = document.getElementById('adminFilterJenis').value;
       const reviewFilter = document.getElementById('adminFilterReview').value;
       const danaFilter = document.getElementById('adminFilterDana').value;
 
       const rows = document.querySelectorAll('.submission-row');
       rows.forEach(row => {
         const rowSearch = row.getAttribute('data-search');
+        const rowJenis = row.getAttribute('data-jenis');
         const rowReview = row.getAttribute('data-review');
         const rowDana = row.getAttribute('data-dana');
 
         const matchSearch = rowSearch.includes(search);
+        const matchJenis = jenisFilter === 'ALL' || rowJenis === jenisFilter;
         const matchReview = reviewFilter === 'ALL' || rowReview === reviewFilter;
         const matchDana = danaFilter === 'ALL' || rowDana === danaFilter;
 
-        if (matchSearch && matchReview && matchDana) {
+        if (matchSearch && matchJenis && matchReview && matchDana) {
           row.style.display = '';
         } else {
           row.style.display = 'none';
@@ -1443,7 +1580,6 @@
       currentActiveFile = { name: filename, url: fileUrl };
       document.getElementById('modal-file-name').innerText = filename;
       document.getElementById('modal-title-text').innerText = title;
-      
       const container = document.getElementById('modal-preview-container');
       
       if (fileUrl && fileUrl.startsWith('data:image/')) {
@@ -1457,7 +1593,6 @@
           </div>
         `;
       }
-
       document.getElementById('file-modal').classList.remove('hidden');
     }
 
@@ -1526,7 +1661,6 @@
       input.value = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
     }
 
-    // AMBIL DATA DARI CLOUD FIRESTORE
     function loadSubmissionsFromCloud() {
       db.collection("submissions").orderBy("createdAt", "desc").get().then((querySnapshot) => {
         let tempSubmissions = [];
