@@ -1355,12 +1355,16 @@
     }
 
     function deleteSubmission(docId) {
-      const sub = submissions.find(s => s.id === id);
-      if (!sub || !sub.docId) return;
+      // Ubah pencarian dari s.id menjadi s.docId agar sinkron
+      const sub = submissions.find(s => s.docId === docId);
+      if (!sub) {
+        showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
+        return;
+      }
 
       if (confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')) {
-        db.collection("submissions").doc(sub.docId).delete().then(() => {
-          showToast('Berhasil Dihapus', `Data pengajuan ${id} telah dihapus dari cloud.`, 'success');
+        db.collection("submissions").doc(docId).delete().then(() => {
+          showToast('Berhasil Dihapus', `Data pengajuan telah dihapus dari cloud.`, 'success');
           loadSubmissionsFromCloud();
         }).catch((error) => {
           showToast('Gagal Menghapus', 'Terjadi kesalahan jaringan.', 'error');
