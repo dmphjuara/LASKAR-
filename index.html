@@ -190,7 +190,7 @@
     let currentActiveFile = null;
     let selectedFileName = '';
     let selectedFileUrl = '';
-    let currentStatCategory = 'capaian'; // State untuk tab grafik histogram DMPH
+    let currentStatCategory = 'capaian';
 
     function createEncryptedToken(user) {
       const payload = {
@@ -244,7 +244,6 @@
         return;
       }
 
-      // KUNCI PENTING: Pengkondisian Navigasi Menu DMPH & Mahasiswa
       if (currentUser.role === 'mahasiswa' && currentTab === 'dmph_review') {
         currentTab = 'form';
       } else if (currentUser.role === 'dmph' && (currentTab !== 'dmph_review' && currentTab !== 'statistics')) {
@@ -418,9 +417,9 @@
       if (currentUser.role === 'mahasiswa') {
         if (currentTab === 'form') return renderFormSubmission();
         if (currentTab === 'history') return renderHistoryView();
-        if (currentTab === 'statistics') return renderMahasiswaStatisticsView(); // SETELAN AWAL MAHASISWA
+        if (currentTab === 'statistics') return renderMahasiswaStatisticsView();
       } else if (currentUser.role === 'dmph') {
-        if (currentTab === 'statistics') return renderDmphHistogramView(); // HISTOGRAM KHUSUS DMPH
+        if (currentTab === 'statistics') return renderDmphHistogramView();
         return renderDmphAdminView();
       }
       return `<div class="p-4 text-red-600">Akses Tidak Diberikan</div>`;
@@ -751,20 +750,25 @@
       `;
     }
 
-    // 1. STATISTIK MAHASISWA (SETELAN AWAL AWAL)
     function renderMahasiswaStatisticsView() {
       const mySubs = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
       
       const totalAjuan = mySubs.length;
-      // Perhitungan akurat dengan membersihkan spasi dan huruf kapital
       const totalJuara1 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
       const totalJuara2 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
-      const totalJuara3 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 3').length;
-      const totalNonJuara = mySubs.filter(s => {
+      
+      // Filter fleksibel untuk Juara 3
       const totalJuara3 = mySubs.filter(s => {
         const j = (s.juara || '').trim().toLowerCase();
         return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
-    }).length;
+      }).length;
+
+      const totalNonJuara = mySubs.filter(s => {
+        const j = (s.juara || '').trim().toLowerCase();
+        const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
+        return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
+      }).length;
+
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
       const daparProses = mySubs.filter(s => s.statusDana === 'Disetujui').length;
       const belumProses = mySubs.filter(s => s.statusDana === 'Belum Diproses').length;
@@ -873,8 +877,8 @@
         </div>
       `;
     }
-    // 2. STATISTIK HISTOGRAM KHUSUS PANEL DMPH (WARNA-WARNI KATEGORI)
-   function renderDmphHistogramView() {
+
+    function renderDmphHistogramView() {
       const dataSet = submissions;
       const totalAjuan = dataSet.length;
 
@@ -883,12 +887,17 @@
       if (currentStatCategory === 'capaian') {
         const c1 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
         const c2 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
-        const c3 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 3').length;
+        
+        const c3 = dataSet.filter(s => {
+          const j = (s.juara || '').trim().toLowerCase();
+          return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
+        }).length;
+
         const cN = dataSet.filter(s => {
-          const c3 = dataSet.filter(s => {
-            const j = (s.juara || '').trim().toLowerCase();
-            return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
-          }).length;
+          const j = (s.juara || '').trim().toLowerCase();
+          const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
+          return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
+        }).length;
 
         histogramItems = [
           { label: 'Juara 1', count: c1, color: 'bg-gradient-to-t from-amber-600 to-amber-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
@@ -981,7 +990,7 @@
         </div>
       `;
     }
-    
+
     function setStatCategory(cat) {
       currentStatCategory = cat;
       renderApp();
@@ -1003,7 +1012,6 @@
             </div>
           </div>
 
-          <!-- Filter Bar Admin -->
           <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1.5">Cari Nama / NIM / Event</label>
@@ -1039,7 +1047,6 @@
             </div>
           </div>
 
-          <!-- Tabel Melebar Full-Width Tanpa Scroll Samping Berlebih -->
           <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse" id="admin-table">
@@ -1067,7 +1074,6 @@
                     </tr>
                   ` : submissions.map((sub) => `
                     <tr class="hover:bg-slate-50/80 transition submission-row" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()} ${sub.namaCabang ? sub.namaCabang.toLowerCase() : ''}" data-jenis="${sub.jenisAjuan || 'Insentif'}" data-review="${sub.statusReview}" data-dana="${sub.statusDana}">
-                      <!-- Kolom 1: Pengusul & Event -->
                       <td class="py-4 px-4">
                         <p class="font-bold text-slate-900 text-sm">${sub.pengusulName}</p>
                         <p class="text-[11px] font-serif text-slate-500">${sub.pengusulNim}</p>
@@ -1075,24 +1081,20 @@
                         <p class="text-[10px] text-slate-400 mt-0.5">${sub.createdAt}</p>
                       </td>
 
-                      <!-- Kolom 2: Jenis Ajuan -->
                       <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
                           ${sub.jenisAjuan || 'Insentif'}
                         </span>
                       </td>
 
-                      <!-- Kolom 3: Nominal -->
                       <td class="py-4 px-4 font-bold text-emerald-800">
                         ${sub.nominalDetail ? `Rp ${sub.nominalDetail}` : '<span class="text-slate-400 font-normal italic">-</span>'}
                       </td>
 
-                      <!-- Kolom 4: Cabang Lomba -->
                       <td class="py-4 px-4">
                         <span class="font-bold text-slate-800">${sub.namaCabang || '-'}</span>
                       </td>
 
-                      <!-- Kolom 5: Jenis Kompetisi & Anggota Tim -->
                       <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-lg text-[10px] font-bold ${(sub.jenisKompetisi === 'Tim' || sub.jenisKompetisi === 'Kelompok/Tim' || sub.jenisKompetisi === 'Kelompok') ? 'bg-purple-100 text-purple-900 border border-purple-200' : 'bg-blue-100 text-blue-900 border border-blue-200'}">
                           ${sub.jenisKompetisi || 'Individu'}
@@ -1105,7 +1107,6 @@
                         ` : ''}
                       </td>
 
-                      <!-- Kolom 6: Capaian & Level -->
                       <td class="py-4 px-4">
                         <span class="inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100 text-amber-900 border border-emerald-200 mb-1">
                           ${sub.juara}
@@ -1113,7 +1114,6 @@
                         <p class="text-[10px] text-slate-500 font-bold"><i class="fa-solid fa-globe"></i> Level: ${sub.level}</p>
                       </td>
 
-                      <!-- Kolom 7: Rekening Tujuan -->
                       <td class="py-4 px-4">
                         ${sub.rekeningProvider ? `
                           <span class="font-bold text-slate-900">${sub.rekeningProvider}</span>
@@ -1121,14 +1121,12 @@
                         ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
                       </td>
 
-                      <!-- Kolom 8: Berkas Cek -->
                       <td class="py-4 px-4">
                         <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}', 'Sertifikat / Bukti Keikutsertaan')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
                           <i class="fa-solid fa-file-image text-emerald-600"></i> Cek Berkas
                         </button>
                       </td>
 
-                      <!-- Kolom 9: Status Review -->
                       <td class="py-4 px-4 space-y-2">
                         ${renderBadgeReview(sub.statusReview)}
                         <div>
@@ -1140,7 +1138,6 @@
                         </div>
                       </td>
 
-                      <!-- Kolom 10: Status Dana & Upload Bukti Transfer -->
                       <td class="py-4 px-4 space-y-2.5 min-w-[170px]">
                         ${renderBadgeDana(sub.statusDana)}
                         <div>
@@ -1172,7 +1169,6 @@
                         </div>
                       </td>
 
-                      <!-- Kolom 11: Tombol Hapus -->
                       <td class="py-4 px-4 text-center">
                         <button onclick="deleteSubmission('${sub.docId}')" title="Hapus Pengajuan" class="w-9 h-9 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition flex items-center justify-center border border-rose-200 mx-auto shadow-sm">
                           <i class="fa-solid fa-trash-can text-sm"></i>
@@ -1274,13 +1270,13 @@
     }
 
     function toggleTeamFields(value) {
-  const section = document.getElementById('team-section');
-  if (value === 'Tim' || value === 'Kelompok' || value === 'Kelompok/Tim') {
-    section.classList.remove('hidden');
-  } else {
-    section.classList.add('hidden');
-  }
-}
+      const section = document.getElementById('team-section');
+      if (value === 'Tim' || value === 'Kelompok' || value === 'Kelompok/Tim') {
+        section.classList.remove('hidden');
+      } else {
+        section.classList.add('hidden');
+      }
+    }
 
     function handleFileSelect(e) {
       const files = e.target.files;
@@ -1404,7 +1400,6 @@
         submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan Data...`;
       }
 
-      // Waktu Real-Time Lokal yang Akurat
       const now = new Date();
       const formattedDate = now.getFullYear() + '-' +
         String(now.getMonth() + 1).padStart(2, '0') + '-' +
