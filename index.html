@@ -761,11 +761,10 @@
       const totalJuara2 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
       const totalJuara3 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 3').length;
       const totalNonJuara = mySubs.filter(s => {
+      const totalJuara3 = mySubs.filter(s => {
         const j = (s.juara || '').trim().toLowerCase();
-        const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
-        return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
-      }).length;
-
+        return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
+    }).length;
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
       const daparProses = mySubs.filter(s => s.statusDana === 'Disetujui').length;
       const belumProses = mySubs.filter(s => s.statusDana === 'Belum Diproses').length;
@@ -886,10 +885,10 @@
         const c2 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
         const c3 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 3').length;
         const cN = dataSet.filter(s => {
-          const j = (s.juara || '').trim().toLowerCase();
-          const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
-          return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
-        }).length;
+          const c3 = dataSet.filter(s => {
+            const j = (s.juara || '').trim().toLowerCase();
+            return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
+          }).length;
 
         histogramItems = [
           { label: 'Juara 1', count: c1, color: 'bg-gradient-to-t from-amber-600 to-amber-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
