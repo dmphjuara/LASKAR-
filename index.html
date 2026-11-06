@@ -756,11 +756,15 @@
       const mySubs = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
       
       const totalAjuan = mySubs.length;
-      // Perhitungan akurat per capaian
-      const totalJuara1 = mySubs.filter(s => s.juara === 'Juara 1').length;
-      const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2').length;
-      const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3').length;
-      const totalNonJuara = mySubs.filter(s => s.juara.includes('Non-Juara') || s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
+      // Perhitungan akurat dengan membersihkan spasi dan huruf kapital
+      const totalJuara1 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
+      const totalJuara2 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
+      const totalJuara3 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 3').length;
+      const totalNonJuara = mySubs.filter(s => {
+        const j = (s.juara || '').trim().toLowerCase();
+        const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
+        return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
+      }).length;
 
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
       const daparProses = mySubs.filter(s => s.statusDana === 'Disetujui').length;
@@ -878,11 +882,15 @@
       let histogramItems = [];
 
       if (currentStatCategory === 'capaian') {
-        const c1 = dataSet.filter(s => s.juara === 'Juara 1').length;
-        const c2 = dataSet.filter(s => s.juara === 'Juara 2').length;
-        const c3 = dataSet.filter(s => s.juara === 'Juara 3').length;
-        const cN = dataSet.filter(s => s.juara.includes('Non-Juara') || s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
-        
+        const c1 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
+        const c2 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
+        const c3 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 3').length;
+        const cN = dataSet.filter(s => {
+          const j = (s.juara || '').trim().toLowerCase();
+          const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
+          return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
+        }).length;
+
         histogramItems = [
           { label: 'Juara 1', count: c1, color: 'bg-gradient-to-t from-amber-600 to-amber-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
           { label: 'Juara 2', count: c2, color: 'bg-gradient-to-t from-slate-600 to-slate-400', badge: 'bg-slate-100 text-slate-800 border-slate-300' },
@@ -890,10 +898,10 @@
           { label: 'Non-Juara / Peserta', count: cN, color: 'bg-gradient-to-t from-teal-700 to-teal-400', badge: 'bg-teal-100 text-teal-900 border-teal-300' }
         ];
       } else if (currentStatCategory === 'jenis') {
-        const j1 = dataSet.filter(s => s.jenisAjuan === 'Insentif').length;
-        const j2 = dataSet.filter(s => s.jenisAjuan === 'Subsidi').length;
-        const j3 = dataSet.filter(s => s.jenisAjuan === 'Transportasi').length;
-        const j4 = dataSet.filter(s => s.jenisAjuan === 'Non-Juara').length;
+        const j1 = dataSet.filter(s => (s.jenisAjuan || '').trim() === 'Insentif').length;
+        const j2 = dataSet.filter(s => (s.jenisAjuan || '').trim() === 'Subsidi').length;
+        const j3 = dataSet.filter(s => (s.jenisAjuan || '').trim() === 'Transportasi').length;
+        const j4 = dataSet.filter(s => (s.jenisAjuan || '').trim() === 'Non-Juara').length;
         histogramItems = [
           { label: 'Insentif', count: j1, color: 'bg-gradient-to-t from-emerald-800 to-emerald-500', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
           { label: 'Subsidi', count: j2, color: 'bg-gradient-to-t from-blue-800 to-blue-500', badge: 'bg-blue-100 text-blue-900 border-blue-300' },
@@ -901,9 +909,9 @@
           { label: 'Non-Juara', count: j4, color: 'bg-gradient-to-t from-rose-700 to-rose-400', badge: 'bg-rose-100 text-rose-900 border-rose-300' }
         ];
       } else if (currentStatCategory === 'level') {
-        const l1 = dataSet.filter(s => s.level === 'Provinsi').length;
-        const l2 = dataSet.filter(s => s.level === 'Nasional').length;
-        const l3 = dataSet.filter(s => s.level === 'Internasional').length;
+        const l1 = dataSet.filter(s => (s.level || '').trim() === 'Provinsi').length;
+        const l2 = dataSet.filter(s => (s.level || '').trim() === 'Nasional').length;
+        const l3 = dataSet.filter(s => (s.level || '').trim() === 'Internasional').length;
         histogramItems = [
           { label: 'Provinsi', count: l1, color: 'bg-gradient-to-t from-cyan-700 to-cyan-400', badge: 'bg-cyan-100 text-cyan-900 border-cyan-300' },
           { label: 'Nasional', count: l2, color: 'bg-gradient-to-t from-mpq-900 to-mpq-600', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
