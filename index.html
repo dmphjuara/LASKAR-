@@ -756,10 +756,11 @@
       const mySubs = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
       
       const totalAjuan = mySubs.length;
-      const totalJuara1 = mySubs.filter(s => s.juara === 'Juara 1' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
-      const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
-      const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3' && s.jenisAjuan !== 'Non-Juara' && s.jenisAjuan !== 'Apresiasi/Non-Juara').length;
-      const totalNonJuara = mySubs.filter(s => s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
+      // Perhitungan akurat per capaian
+      const totalJuara1 = mySubs.filter(s => s.juara === 'Juara 1').length;
+      const totalJuara2 = mySubs.filter(s => s.juara === 'Juara 2').length;
+      const totalJuara3 = mySubs.filter(s => s.juara === 'Juara 3').length;
+      const totalNonJuara = mySubs.filter(s => s.juara.includes('Non-Juara') || s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
 
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
       const daparProses = mySubs.filter(s => s.statusDana === 'Disetujui').length;
@@ -869,20 +870,19 @@
         </div>
       `;
     }
-
     // 2. STATISTIK HISTOGRAM KHUSUS PANEL DMPH (WARNA-WARNI KATEGORI)
-    function renderDmphHistogramView() {
+   function renderDmphHistogramView() {
       const dataSet = submissions;
       const totalAjuan = dataSet.length;
 
-      // Data Histogram per Kategori
       let histogramItems = [];
 
       if (currentStatCategory === 'capaian') {
         const c1 = dataSet.filter(s => s.juara === 'Juara 1').length;
         const c2 = dataSet.filter(s => s.juara === 'Juara 2').length;
         const c3 = dataSet.filter(s => s.juara === 'Juara 3').length;
-        const cN = dataSet.filter(s => s.juara.includes('Non-Juara') || s.jenisAjuan === 'Non-Juara').length;
+        const cN = dataSet.filter(s => s.juara.includes('Non-Juara') || s.jenisAjuan === 'Non-Juara' || s.jenisAjuan === 'Apresiasi/Non-Juara').length;
+        
         histogramItems = [
           { label: 'Juara 1', count: c1, color: 'bg-gradient-to-t from-amber-600 to-amber-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
           { label: 'Juara 2', count: c2, color: 'bg-gradient-to-t from-slate-600 to-slate-400', badge: 'bg-slate-100 text-slate-800 border-slate-300' },
@@ -926,7 +926,6 @@
             </button>
           </div>
 
-          <!-- Pilihan Kategori Grafik Interaktif DMPH -->
           <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200/80 flex flex-wrap gap-3 items-center justify-between">
             <span class="text-xs font-bold text-slate-600 uppercase pl-2"><i class="fa-solid fa-filter text-mpq-700"></i> Kategori:</span>
             <div class="flex flex-wrap gap-2">
@@ -942,7 +941,6 @@
             </div>
           </div>
 
-          <!-- HISTOGRAM VERTIKAL INTERAKTIF BERWARNA-WARNI -->
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
             <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-4">
               <span><i class="fa-solid fa-chart-bar text-mpq-800 mr-2"></i> Grafik Histogram ${currentStatCategory.toUpperCase()}</span>
@@ -954,18 +952,15 @@
                 const heightPercent = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 return `
                   <div class="flex-1 flex flex-col items-center h-full justify-end group">
-                    <!-- Angka Jumlah Pengajuan di Atas Batang -->
                     <span class="text-xs font-bold text-slate-800 mb-2 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-sm transition transform group-hover:-translate-y-1">
                       ${item.count}
                     </span>
-                    <!-- Batang Histogram Berwarna-warni -->
                     <div class="w-full max-w-[64px] ${item.color} rounded-t-2xl shadow-md transition-all duration-500 ease-out group-hover:brightness-110" style="height: ${heightPercent > 0 ? heightPercent : 4}%;"></div>
                   </div>
                 `;
               }).join('')}
             </div>
 
-            <!-- Label Kategori di Bawah Batang Histogram -->
             <div class="flex justify-around gap-4 text-center">
               ${histogramItems.map(item => `
                 <div class="flex-1 flex flex-col items-center">
@@ -979,7 +974,7 @@
         </div>
       `;
     }
-
+    
     function setStatCategory(cat) {
       currentStatCategory = cat;
       renderApp();
