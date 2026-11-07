@@ -8,15 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- EmailJS SDK -->
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script type="text/javascript">
-    (function(){
-       emailjs.init({
-         publicKey: "stpoZaSZhejlns5fF",
-       });
-    })();
-  </script>
   <!-- Firebase App & Firestore via CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -134,42 +125,35 @@
     </div>
   </div>
 
-  <!-- Modal Notifikasi Email (Khusus Pencairan Dana) -->
-  <div id="email-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+  <!-- Modal Konfirmasi Arsip Otomatis -->
+  <div id="archive-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
       <div class="bg-gradient-to-r from-mpq-900 to-mpq-800 p-5 text-white flex justify-between items-center border-b border-gold-500/30">
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-gold-400">
-            <i class="fa-solid fa-paper-plane text-lg"></i>
+            <i class="fa-solid fa-box-archive text-lg"></i>
           </div>
           <div>
-            <h3 class="font-bold text-base">Notifikasi Pencairan Dana</h3>
-            <p class="text-xs text-emerald-200">Konfirmasi Email Pengajuan Mahasiswa</p>
+            <h3 class="font-bold text-base">Arsip Periode Otomatis</h3>
+            <p class="text-xs text-emerald-200">Simpan Data ke Tahun Berjalan</p>
           </div>
         </div>
-        <button onclick="closeEmailModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-emerald-200 hover:text-white transition">
+        <button onclick="closeArchiveModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-emerald-200 hover:text-white transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="p-6 space-y-4 text-sm">
-        <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 space-y-1.5">
-          <p><span class="font-bold text-slate-500">Penerima:</span> <span id="email-modal-to" class="text-slate-900 font-bold"></span></p>
-          <p><span class="font-bold text-slate-500">Subjek:</span> <span id="email-modal-subject" class="font-bold text-mpq-900"></span></p>
-          <p class="text-xs text-slate-400 flex items-center gap-1.5 pt-1.5 border-t border-emerald-200/60">
-            <i class="fa-solid fa-clock"></i> <span id="email-modal-time"></span>
-          </p>
-        </div>
-        <div>
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Pratinjau Pesan:</p>
-          <div id="email-modal-body" class="text-sm text-slate-700 bg-white p-4 rounded-2xl border border-slate-200 shadow-inner leading-relaxed space-y-2"></div>
+        <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-mpq-900 space-y-1 text-xs">
+          <p class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-mpq-700"></i> Konfirmasi Pengarsipan:</p>
+          <p>Sistem akan otomatis membuat label arsip tahun <strong id="active-archive-year-label" class="text-gold-600 font-bold">2026</strong> dan menyalin seluruh data aktif beserta rekapitulasinya ke menu Arsip Periode.</p>
         </div>
       </div>
       <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
-        <button onclick="closeEmailModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
+        <button onclick="closeArchiveModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
           Batal
         </button>
-        <button id="btn-send-real-email" onclick="executeSendEmail()" class="px-5 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-mpq-900/20">
-          <i class="fa-solid fa-paper-plane"></i> Kirim Email Sekarang
+        <button id="btn-execute-archive" onclick="executeAutoArchive()" class="px-5 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg">
+          <i class="fa-solid fa-box-archive"></i> Ya, Arsipkan Sekarang
         </button>
       </div>
     </div>
@@ -185,12 +169,19 @@
     let sessionToken = localStorage.getItem('LASKAR_SESSION_TOKEN') || null;
     let currentUser = null; 
     let currentTab = 'form'; 
-    let pendingEmailData = null;
     let submissions = []; 
+    let archivedSubmissions = []; 
+    let selectedArchiveYear = null; 
     let currentActiveFile = null;
     let selectedFileName = '';
     let selectedFileUrl = '';
     let currentStatCategory = 'capaian';
+    let mahasiswaStatCategory = 'capaian'; 
+    let archiveStatCategory = 'capaian'; // State filter kategori untuk di dalam arsip
+
+    let currentAdminSearch = '';
+    let currentAdminFilterJenis = 'ALL';
+    let currentAdminFilterDana = 'ALL';
 
     function createEncryptedToken(user) {
       const payload = {
@@ -246,7 +237,7 @@
 
       if (currentUser.role === 'mahasiswa' && currentTab === 'dmph_review') {
         currentTab = 'form';
-      } else if (currentUser.role === 'dmph' && (currentTab !== 'dmph_review' && currentTab !== 'statistics')) {
+      } else if (currentUser.role === 'dmph' && (currentTab !== 'dmph_review' && currentTab !== 'statistics' && currentTab !== 'archives')) {
         currentTab = 'dmph_review';
       }
 
@@ -328,6 +319,12 @@
                         <span>Statistik & Histogram</span>
                       </div>
                     </button>
+                    <button onclick="switchTab('archives')" class="w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-between ${currentTab === 'archives' ? 'bg-mpq-800 text-gold-400 shadow-md shadow-mpq-900/10' : 'hover:bg-slate-100 text-slate-600'}">
+                      <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-box-archive text-base"></i>
+                        <span>Arsip Periode</span>
+                      </div>
+                    </button>
                   ` : ''}
                 </div>
               </div>
@@ -346,6 +343,10 @@
           </main>
         </div>
       `;
+
+      if (currentUser && currentUser.role === 'dmph' && currentTab === 'dmph_review') {
+        filterAdminTable();
+      }
     }
 
     function renderLoginScreen() {
@@ -420,6 +421,7 @@
         if (currentTab === 'statistics') return renderMahasiswaStatisticsView();
       } else if (currentUser.role === 'dmph') {
         if (currentTab === 'statistics') return renderDmphHistogramView();
+        if (currentTab === 'archives') return renderDmphArchivesView();
         return renderDmphAdminView();
       }
       return `<div class="p-4 text-red-600">Akses Tidak Diberikan</div>`;
@@ -518,7 +520,6 @@
                 </div>
               </div>
 
-              <!-- Bagian Tim -->
               <div id="team-section" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 mt-3">
                 <p class="text-xs font-bold text-slate-700 uppercase">Detail Tim</p>
                 <div>
@@ -528,7 +529,6 @@
               </div>
             </div>
 
-            <!-- Bagian Rekening -->
             <div id="rekening-section" class="p-6 space-y-4">
               <h3 class="text-sm font-bold text-mpq-800 uppercase tracking-wide flex items-center gap-2.5 border-b border-slate-100 pb-3">
                 <span class="w-7 h-7 rounded-xl bg-emerald-100 text-mpq-900 flex items-center justify-center text-xs font-bold">3</span> Rekening / E-Wallet Pencairan
@@ -546,7 +546,8 @@
 
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">Nomor Rekening / HP (a.n Pemohon) <span class="text-red-600">*</span></label>
-                  <input type="text" id="nomorRekening" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Nomor rekening / Handphone">
+                  <input type="text" id="nomorRekening" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl outline-none shadow-sm" placeholder="Ex: 1234567 (wati)">
+                  <p class="text-[10px] text-slate-400 mt-1">Pastikan nomor rekening/e-wallet benar agar pencairan dana tidak salah alamat.</p>
                 </div>
               </div>
             </div>
@@ -662,7 +663,6 @@
                     <th class="py-3.5 px-4">Kompetisi</th>
                     <th class="py-3.5 px-4">Capaian</th>
                     <th class="py-3.5 px-4">Rekening Tujuan</th>
-                    <th class="py-3.5 px-4">Status Review</th>
                     <th class="py-3.5 px-4">Status Dana</th>
                     <th class="py-3.5 px-4 text-center">Bukti</th>
                     <th class="py-3.5 px-4 text-center">Cek TF</th>
@@ -672,7 +672,7 @@
                 <tbody class="divide-y divide-slate-100 text-xs">
                   ${mySubmissions.length === 0 ? `
                     <tr>
-                      <td colspan="12" class="py-16 text-center text-slate-400">
+                      <td colspan="11" class="py-16 text-center text-slate-400">
                         <div class="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400 text-2xl mx-auto mb-3">
                           <i class="fa-solid fa-box-open"></i>
                         </div>
@@ -713,13 +713,10 @@
                         ${sub.rekeningProvider ? `
                           <span class="text-[11px] font-bold text-slate-800">${sub.rekeningProvider}</span>
                           <p class="text-[11px] font-serif text-slate-500 mt-0.5">${sub.nomorRekening}</p>
-                        ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
+                        ` : `<span class="text-slate-400 font-medium italic">Peserta</span>`}
                       </td>
                       <td class="py-4 px-4">
-                        ${renderBadgeReview(sub.statusReview)}
-                      </td>
-                      <td class="py-4 px-4">
-                        ${renderBadgeDana(sub.statusDana)}
+                        ${renderBadgeDana(sub.statusDana, sub.jenisAjuan)}
                       </td>
                       <td class="py-4 px-4 text-center">
                         <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}', 'Sertifikat / Bukti Kejuaraan')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-mpq-900 font-bold rounded-xl transition flex items-center gap-1.5 mx-auto border border-slate-200">
@@ -750,19 +747,17 @@
       `;
     }
 
+    // PANEL STATISTIK MAHASISWA (TANPA DROPDOWN TAHUN REDUNDAN, MURNI LIVE REPORT TAHUN BERJALAN)
     function renderMahasiswaStatisticsView() {
       const mySubs = submissions.filter(s => s.userEmail.toLowerCase() === currentUser.email.toLowerCase());
       
       const totalAjuan = mySubs.length;
       const totalJuara1 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
       const totalJuara2 = mySubs.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
-      
-      // Filter fleksibel untuk Juara 3
       const totalJuara3 = mySubs.filter(s => {
         const j = (s.juara || '').trim().toLowerCase();
         return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
       }).length;
-
       const totalNonJuara = mySubs.filter(s => {
         const j = (s.juara || '').trim().toLowerCase();
         const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
@@ -772,6 +767,60 @@
       const danaCair = mySubs.filter(s => s.statusDana === 'Dana Dicairkan').length;
       const daparProses = mySubs.filter(s => s.statusDana === 'Disetujui').length;
       const belumProses = mySubs.filter(s => s.statusDana === 'Belum Diproses').length;
+
+      // Dataset global live report tahun berjalan
+      const currentYearStr = String(new Date().getFullYear());
+      const globalDataSet = submissions.filter(s => {
+        const dateStr = s.createdAt || currentYearStr;
+        return dateStr.includes(currentYearStr);
+      });
+
+      let histogramItems = [];
+
+      if (mahasiswaStatCategory === 'capaian') {
+        const c1 = globalDataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
+        const c2 = globalDataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
+        const c3 = globalDataSet.filter(s => {
+          const j = (s.juara || '').trim().toLowerCase();
+          return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
+        }).length;
+        const cN = globalDataSet.filter(s => {
+          const j = (s.juara || '').trim().toLowerCase();
+          const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
+          return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
+        }).length;
+
+        histogramItems = [
+          { label: 'Juara 1', count: c1, color: 'bg-gradient-to-t from-amber-600 to-amber-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
+          { label: 'Juara 2', count: c2, color: 'bg-gradient-to-t from-slate-600 to-slate-400', badge: 'bg-slate-100 text-slate-800 border-slate-300' },
+          { label: 'Juara 3', count: c3, color: 'bg-gradient-to-t from-amber-800 to-amber-600', badge: 'bg-amber-200 text-amber-950 border-amber-400' },
+          { label: 'Non-Juara / Peserta', count: cN, color: 'bg-gradient-to-t from-teal-700 to-teal-400', badge: 'bg-teal-100 text-teal-900 border-teal-300' }
+        ];
+      } else if (mahasiswaStatCategory === 'jenis') {
+        const j1 = globalDataSet.filter(s => (s.jenisAjuan || '').trim() === 'Insentif').length;
+        const j2 = globalDataSet.filter(s => (s.jenisAjuan || '').trim() === 'Subsidi').length;
+        const j3 = globalDataSet.filter(s => (s.jenisAjuan || '').trim() === 'Transportasi').length;
+        const j4 = globalDataSet.filter(s => (s.jenisAjuan || '').trim() === 'Non-Juara').length;
+
+        histogramItems = [
+          { label: 'Insentif', count: j1, color: 'bg-gradient-to-t from-emerald-800 to-emerald-500', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+          { label: 'Subsidi', count: j2, color: 'bg-gradient-to-t from-blue-800 to-blue-500', badge: 'bg-blue-100 text-blue-900 border-blue-300' },
+          { label: 'Transportasi', count: j3, color: 'bg-gradient-to-t from-purple-800 to-purple-500', badge: 'bg-purple-100 text-purple-900 border-purple-300' },
+          { label: 'Non-Juara', count: j4, color: 'bg-gradient-to-t from-rose-700 to-rose-400', badge: 'bg-rose-100 text-rose-900 border-rose-300' }
+        ];
+      } else if (mahasiswaStatCategory === 'level') {
+        const l1 = globalDataSet.filter(s => (s.level || '').trim() === 'Provinsi').length;
+        const l2 = globalDataSet.filter(s => (s.level || '').trim() === 'Nasional').length;
+        const l3 = globalDataSet.filter(s => (s.level || '').trim() === 'Internasional').length;
+
+        histogramItems = [
+          { label: 'Provinsi', count: l1, color: 'bg-gradient-to-t from-cyan-700 to-cyan-400', badge: 'bg-cyan-100 text-cyan-900 border-cyan-300' },
+          { label: 'Nasional', count: l2, color: 'bg-gradient-to-t from-mpq-900 to-mpq-600', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+          { label: 'Internasional', count: l3, color: 'bg-gradient-to-t from-gold-600 to-gold-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
+        ];
+      }
+
+      const gMaxCount = Math.max(...histogramItems.map(i => i.count), 1);
 
       return `
         <div class="max-w-5xl mx-auto space-y-6">
@@ -789,39 +838,28 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-xl font-bold shadow-inner">
-                <i class="fa-solid fa-file-invoice"></i>
-              </div>
+              <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-mpq-800 flex items-center justify-center text-xl font-bold shadow-inner"><i class="fa-solid fa-file-invoice"></i></div>
               <div>
                 <p class="text-xs text-slate-400 font-bold uppercase">Total Pengajuan</p>
                 <p class="text-2xl font-bold text-slate-900">${totalAjuan}</p>
               </div>
             </div>
-
             <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl font-bold shadow-inner">
-                <i class="fa-solid fa-trophy"></i>
-              </div>
+              <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl font-bold shadow-inner"><i class="fa-solid fa-trophy"></i></div>
               <div>
                 <p class="text-xs text-slate-400 font-bold uppercase">Total Juara 1</p>
                 <p class="text-2xl font-bold text-slate-900">${totalJuara1}</p>
               </div>
             </div>
-
             <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center text-xl font-bold shadow-inner">
-                <i class="fa-solid fa-medal"></i>
-              </div>
+              <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center text-xl font-bold shadow-inner"><i class="fa-solid fa-medal"></i></div>
               <div>
                 <p class="text-xs text-slate-400 font-bold uppercase">Juara 2 & 3</p>
                 <p class="text-2xl font-bold text-slate-900">${totalJuara2 + totalJuara3}</p>
               </div>
             </div>
-
             <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold shadow-inner">
-                <i class="fa-solid fa-user-ninja"></i>
-              </div>
+              <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center text-xl font-bold shadow-inner"><i class="fa-solid fa-user-ninja"></i></div>
               <div>
                 <p class="text-xs text-slate-400 font-bold uppercase">Ajuan Non-Juara</p>
                 <p class="text-2xl font-bold text-slate-900">${totalNonJuara}</p>
@@ -837,19 +875,19 @@
               <div class="space-y-3 pt-2">
                 <div>
                   <div class="flex justify-between text-xs font-bold mb-1"><span>Juara 1</span><span>${totalJuara1} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-amber-500 h-full rounded-full" style="width: ${totalAjuan ? (totalJuara1/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width: ${totalAjuan ? (totalJuara1/totalAjuan)*100 : 0}%"></div></div>
                 </div>
                 <div>
                   <div class="flex justify-between text-xs font-bold mb-1"><span>Juara 2</span><span>${totalJuara2} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-slate-400 h-full rounded-full" style="width: ${totalAjuan ? (totalJuara2/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-slate-400 h-full rounded-full transition-all duration-500" style="width: ${totalAjuan ? (totalJuara2/totalAjuan)*100 : 0}%"></div></div>
                 </div>
                 <div>
                   <div class="flex justify-between text-xs font-bold mb-1"><span>Juara 3</span><span>${totalJuara3} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-amber-700 h-full rounded-full" style="width: ${totalAjuan ? (totalJuara3/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-amber-700 h-full rounded-full transition-all duration-500" style="width: ${totalAjuan ? (totalJuara3/totalAjuan)*100 : 0}%"></div></div>
                 </div>
                 <div>
                   <div class="flex justify-between text-xs font-bold mb-1"><span>Apresiasi / Non-Juara</span><span>${totalNonJuara} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-teal-600 h-full rounded-full" style="width: ${totalAjuan ? (totalNonJuara/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-teal-600 h-full rounded-full transition-all duration-500" style="width: ${totalAjuan ? (totalNonJuara/totalAjuan)*100 : 0}%"></div></div>
                 </div>
               </div>
             </div>
@@ -861,17 +899,61 @@
               <div class="space-y-3 pt-2">
                 <div>
                   <div class="flex justify-between text-xs font-bold mb-1"><span>Dana Dicairkan</span><span>${danaCair} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-mpq-800 h-full rounded-full" style="width: ${totalAjuan ? (danaCair/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-mpq-800 h-full rounded-full transition-all duration-500" style="width: ${totalAjuan ? (danaCair/totalAjuan)*100 : 0}%"></div></div>
                 </div>
                 <div>
                   <div class="flex justify-between text-xs font-bold mb-1"><span>Disetujui (Menunggu Pencairan)</span><span>${daparProses} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-blue-600 h-full rounded-full" style="width: ${totalAjuan ? (daparProses/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: ${totalAjuan ? (daparProses/totalAjuan)*100 : 0}%"></div></div>
                 </div>
                 <div>
                   <div class="flex justify-between text-xs font-bold mb-1"><span>Belum Diproses</span><span>${belumProses} Pengajuan</span></div>
-                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-slate-300 h-full rounded-full" style="width: ${totalAjuan ? (belumProses/totalAjuan)*100 : 0}%"></div></div>
+                  <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden"><div class="bg-slate-300 h-full rounded-full transition-all duration-500" style="width: ${totalAjuan ? (belumProses/totalAjuan)*100 : 0}%"></div></div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- HISTOGRAM GLOBAL LASKAR (LIVE REPORT TAHUN BERJALAN TANPA DROPDOWN TAHUN) -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-earth-americas text-mpq-800"></i> Histogram Global LASKAR
+              </h3>
+              <span class="text-xs font-bold bg-emerald-100 text-emerald-900 px-3 py-1 rounded-xl border border-emerald-200">
+                <i class="fa-solid fa-calendar-days"></i> Tahun Berjalan (${currentYearStr})
+              </span>
+            </div>
+
+            <!-- Tombol Filter Kategori Histogram Mahasiswa -->
+            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex flex-wrap gap-2 items-center justify-between">
+              <span class="text-xs font-bold text-slate-600 uppercase pl-1"><i class="fa-solid fa-filter text-mpq-700"></i>Kategori:</span>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="setMahasiswaStatCategory('capaian')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${mahasiswaStatCategory === 'capaian' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">Capaian / Juara</button>
+                <button onclick="setMahasiswaStatCategory('jenis')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${mahasiswaStatCategory === 'jenis' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">Jenis Ajuan</button>
+                <button onclick="setMahasiswaStatCategory('level')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${mahasiswaStatCategory === 'level' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">Level Kompetisi</button>
+              </div>
+            </div>
+            
+            <div class="h-56 flex items-end justify-around gap-4 pt-6 pb-2 border-b border-slate-200">
+              ${histogramItems.map(item => {
+                const heightPercent = gMaxCount > 0 ? (item.count / gMaxCount) * 100 : 0;
+                return `
+                  <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                    <span class="text-xs font-bold text-slate-800 mb-1.5 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">${item.count}</span>
+                    <div class="w-full max-w-[60px] ${item.color} rounded-t-xl shadow-sm transition-all duration-500" style="height: ${heightPercent > 0 ? heightPercent : 4}%;"></div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <div class="flex justify-around gap-2 text-center">
+              ${histogramItems.map(item => `
+                <div class="flex-1 flex flex-col items-center">
+                  <span class="text-xs font-bold px-3 py-1 rounded-xl border ${item.badge} shadow-sm">
+                    ${item.label}
+                  </span>
+                </div>
+              `).join('')}
             </div>
           </div>
         </div>
@@ -880,19 +962,15 @@
 
     function renderDmphHistogramView() {
       const dataSet = submissions;
-      const totalAjuan = dataSet.length;
-
       let histogramItems = [];
 
       if (currentStatCategory === 'capaian') {
         const c1 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
         const c2 = dataSet.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
-        
         const c3 = dataSet.filter(s => {
           const j = (s.juara || '').trim().toLowerCase();
           return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
         }).length;
-
         const cN = dataSet.filter(s => {
           const j = (s.juara || '').trim().toLowerCase();
           const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
@@ -945,46 +1023,26 @@
           <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200/80 flex flex-wrap gap-3 items-center justify-between">
             <span class="text-xs font-bold text-slate-600 uppercase pl-2"><i class="fa-solid fa-filter text-mpq-700"></i> Kategori:</span>
             <div class="flex flex-wrap gap-2">
-              <button onclick="setStatCategory('capaian')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'capaian' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
-                <i class="fa-solid fa-trophy mr-1"></i> Capaian / Juara
-              </button>
-              <button onclick="setStatCategory('jenis')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'jenis' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
-                <i class="fa-solid fa-tags mr-1"></i> Jenis Ajuan
-              </button>
-              <button onclick="setStatCategory('level')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'level' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">
-                <i class="fa-solid fa-globe mr-1"></i> Level Kompetisi
-              </button>
+              <button onclick="setStatCategory('capaian')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'capaian' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">Capaian / Juara</button>
+              <button onclick="setStatCategory('jenis')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'jenis' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">Jenis Ajuan</button>
+              <button onclick="setStatCategory('level')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${currentStatCategory === 'level' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}">Level Kompetisi</button>
             </div>
           </div>
 
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
-            <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-4">
-              <span><i class="fa-solid fa-chart-bar text-mpq-800 mr-2"></i> Grafik Histogram ${currentStatCategory.toUpperCase()}</span>
-              <span class="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">Total: ${totalAjuan} Pengajuan</span>
-            </h3>
-
             <div class="h-64 flex items-end justify-around gap-4 pt-8 pb-4 border-b border-slate-200">
               ${histogramItems.map(item => {
                 const heightPercent = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 return `
                   <div class="flex-1 flex flex-col items-center h-full justify-end group">
-                    <span class="text-xs font-bold text-slate-800 mb-2 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-sm transition transform group-hover:-translate-y-1">
-                      ${item.count}
-                    </span>
-                    <div class="w-full max-w-[64px] ${item.color} rounded-t-2xl shadow-md transition-all duration-500 ease-out group-hover:brightness-110" style="height: ${heightPercent > 0 ? heightPercent : 4}%;"></div>
+                    <span class="text-xs font-bold text-slate-800 mb-2 bg-slate-100 px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-sm">${item.count}</span>
+                    <div class="w-full max-w-[64px] ${item.color} rounded-t-2xl shadow-md transition-all duration-500 ease-out" style="height: ${heightPercent > 0 ? heightPercent : 4}%;"></div>
                   </div>
                 `;
               }).join('')}
             </div>
-
             <div class="flex justify-around gap-4 text-center">
-              ${histogramItems.map(item => `
-                <div class="flex-1 flex flex-col items-center">
-                  <span class="text-xs font-bold px-3 py-1 rounded-xl border ${item.badge} shadow-sm">
-                    ${item.label}
-                  </span>
-                </div>
-              `).join('')}
+              ${histogramItems.map(item => `<div class="flex-1 flex flex-col items-center"><span class="text-xs font-bold px-3 py-1 rounded-xl border ${item.badge}">${item.label}</span></div>`).join('')}
             </div>
           </div>
         </div>
@@ -996,6 +1054,17 @@
       renderApp();
     }
 
+    function setMahasiswaStatCategory(cat) {
+      mahasiswaStatCategory = cat;
+      renderApp();
+    }
+
+    function setArchiveStatCategory(cat) {
+      archiveStatCategory = cat;
+      renderApp();
+    }
+
+    // PANEL UTAMA DMPH
     function renderDmphAdminView() {
       return `
         <div class="w-full space-y-6">
@@ -1004,46 +1073,50 @@
               <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
                 <i class="fa-solid fa-user-shield text-gold-500 text-lg"></i> Review DMPH
               </h2>
-              <p class="text-xs text-slate-500 mt-1">peninjauan dan verifikasi pengajuan seluruh mahasiswa.</p>
+              <p class="text-xs text-slate-500 mt-1">Peninjauan dan verifikasi pengajuan seluruh mahasiswa.</p>
             </div>
             <div class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-2xl text-xs text-emerald-900 font-bold flex items-center gap-2">
               <i class="fa-solid fa-database text-emerald-600"></i>
-              <span>Total Seluruh Pengajuan: ${submissions.length}</span>
+              <span>Total Pengajuan: ${submissions.length}</span>
             </div>
           </div>
 
-          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1.5">Cari Nama / NIM / Event</label>
-              <input type="text" id="adminSearch" onkeyup="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-mpq-700 shadow-sm" placeholder="Ketik kata kunci...">
+          <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col lg:flex-row items-end justify-between gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 w-full">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">Cari Nama / NIM / Event</label>
+                <input type="text" id="adminSearch" value="${currentAdminSearch}" onkeyup="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none focus:border-mpq-700 shadow-sm" placeholder="Ketik kata kunci...">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Jenis Ajuan</label>
+                <select id="adminFilterJenis" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
+                  <option value="ALL" ${currentAdminFilterJenis === 'ALL' ? 'selected' : ''}>Semua Jenis Ajuan</option>
+                  <option value="Insentif" ${currentAdminFilterJenis === 'Insentif' ? 'selected' : ''}>Insentif</option>
+                  <option value="Subsidi" ${currentAdminFilterJenis === 'Subsidi' ? 'selected' : ''}>Subsidi</option>
+                  <option value="Transportasi" ${currentAdminFilterJenis === 'Transportasi' ? 'selected' : ''}>Transportasi</option>
+                  <option value="Non-Juara" ${currentAdminFilterJenis === 'Non-Juara' ? 'selected' : ''}>Non-Juara</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Status Dana</label>
+                <select id="adminFilterDana" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
+                  <option value="ALL" ${currentAdminFilterDana === 'ALL' ? 'selected' : ''}>Semua Status Dana</option>
+                  <option value="Belum Diproses" ${currentAdminFilterDana === 'Belum Diproses' ? 'selected' : ''}>Belum Diproses</option>
+                  <option value="Disetujui" ${currentAdminFilterDana === 'Disetujui' ? 'selected' : ''}>Disetujui</option>
+                  <option value="Dana Dicairkan" ${currentAdminFilterDana === 'Dana Dicairkan' ? 'selected' : ''}>Dana Dicairkan</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Jenis Ajuan</label>
-              <select id="adminFilterJenis" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
-                <option value="ALL">Semua Jenis Ajuan</option>
-                <option value="Insentif">Insentif</option>
-                <option value="Subsidi">Subsidi</option>
-                <option value="Transportasi">Transportasi</option>
-                <option value="Non-Juara">Non-Juara</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Status Review</label>
-              <select id="adminFilterReview" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
-                <option value="ALL">Semua Status Review</option>
-                <option value="Belum Direview">Belum Direview</option>
-                <option value="Sudah Direview">Sudah Direview</option>
-                <option value="Perlu Revisi">Perlu Revisi</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1.5">Filter Status Dana</label>
-              <select id="adminFilterDana" onchange="filterAdminTable()" class="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl outline-none bg-white font-bold shadow-sm">
-                <option value="ALL">Semua Status Dana</option>
-                <option value="Belum Diproses">Belum Diproses</option>
-                <option value="Disetujui">Disetujui</option>
-                <option value="Dana Dicairkan">Dana Dicairkan</option>
-              </select>
+
+            <div class="flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 w-full lg:w-auto justify-end flex-shrink-0">
+              <button onclick="openArchiveModal()" class="h-9 px-3.5 bg-mpq-800 hover:bg-mpq-900 text-gold-400 font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-sm" title="Arsipkan Seluruh Data Aktif & Histogram Ke Periode Saat Ini">
+                <i class="fa-solid fa-arrow-down text-sm"></i>
+                <span>Arsip Data</span>
+              </button>
+              <button onclick="executeResetActiveData()" class="h-9 px-3.5 bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white font-bold text-xs rounded-xl transition flex items-center gap-2 border border-amber-200 shadow-sm" title="Reset/Bersihkan Data Aktif Tabel">
+                <i class="fa-solid fa-rotate-right text-sm"></i>
+                <span>Reset</span>
+              </button>
             </div>
           </div>
 
@@ -1060,20 +1133,21 @@
                     <th class="py-3.5 px-4">Capaian & Level</th>
                     <th class="py-3.5 px-4">Rekening Tujuan</th>
                     <th class="py-3.5 px-4">Berkas / Cek</th>
-                    <th class="py-3.5 px-4">Status Review</th>
-                    <th class="py-3.5 px-4">Status Dana & TF</th>
+                    <th class="py-3.5 px-4">Status Dana & Kontrol</th>
                     <th class="py-3.5 px-4 text-center">Hapus</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                   ${submissions.length === 0 ? `
                     <tr>
-                      <td colspan="11" class="py-16 text-center text-slate-400">
+                      <td colspan="10" class="py-16 text-center text-slate-400">
                         Belum ada berkas pengajuan yang masuk ke sistem DMPH.
                       </td>
                     </tr>
-                  ` : submissions.map((sub) => `
-                    <tr class="hover:bg-slate-50/80 transition submission-row" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()} ${sub.namaCabang ? sub.namaCabang.toLowerCase() : ''}" data-jenis="${sub.jenisAjuan || 'Insentif'}" data-review="${sub.statusReview}" data-dana="${sub.statusDana}">
+                  ` : submissions.map((sub) => {
+                    const isNonJuara = (sub.jenisAjuan || '').trim() === 'Non-Juara' || (sub.jenisAjuan || '').trim() === 'Apresiasi/Non-Juara';
+                    return `
+                    <tr class="hover:bg-slate-50/80 transition submission-row" id="row-${sub.docId}" data-search="${sub.pengusulName.toLowerCase()} ${sub.pengusulNim.toLowerCase()} ${sub.namaEvent.toLowerCase()} ${sub.namaCabang ? sub.namaCabang.toLowerCase() : ''}" data-jenis="${sub.jenisAjuan || 'Insentif'}" data-dana="${sub.statusDana}">
                       <td class="py-4 px-4">
                         <p class="font-bold text-slate-900 text-sm">${sub.pengusulName}</p>
                         <p class="text-[11px] font-serif text-slate-500">${sub.pengusulNim}</p>
@@ -1118,7 +1192,7 @@
                         ${sub.rekeningProvider ? `
                           <span class="font-bold text-slate-900">${sub.rekeningProvider}</span>
                           <p class="text-xs font-serif text-slate-500 mt-0.5">${sub.nomorRekening}</p>
-                        ` : `<span class="text-slate-400 font-medium italic">Tidak Ada</span>`}
+                        ` : `<span class="text-slate-400 font-medium italic">Peserta</span>`}
                       </td>
 
                       <td class="py-4 px-4">
@@ -1127,46 +1201,43 @@
                         </button>
                       </td>
 
-                      <td class="py-4 px-4 space-y-2">
-                        ${renderBadgeReview(sub.statusReview)}
-                        <div>
-                          <select onchange="updateReviewStatus('${sub.docId}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
-                            <option value="Belum Direview" ${sub.statusReview === 'Belum Direview' ? 'selected' : ''}>Belum Direview</option>
-                            <option value="Sudah Direview" ${sub.statusReview === 'Sudah Direview' ? 'selected' : ''}>Sudah Direview</option>
-                            <option value="Perlu Revisi" ${sub.statusReview === 'Perlu Revisi' ? 'selected' : ''}>Perlu Revisi</option>
-                          </select>
-                        </div>
-                      </td>
-
                       <td class="py-4 px-4 space-y-2.5 min-w-[170px]">
-                        ${renderBadgeDana(sub.statusDana)}
-                        <div>
-                          <select onchange="updateDanaStatus('${sub.docId}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm">
-                            <option value="Belum Diproses" ${sub.statusDana === 'Belum Diproses' ? 'selected' : ''}>Belum Diproses</option>
-                            <option value="Disetujui" ${sub.statusDana === 'Disetujui' ? 'selected' : ''}>Disetujui</option>
-                            <option value="Dana Dicairkan" ${sub.statusDana === 'Dana Dicairkan' ? 'selected' : ''}>Dana Dicairkan</option>
-                          </select>
+                        <div id="badge-dana-container-${sub.docId}">
+                          ${renderBadgeDana(sub.statusDana, sub.jenisAjuan)}
                         </div>
                         
-                        <div class="pt-1 border-t border-slate-100">
-                          <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bukti Transfer:</label>
-                          ${sub.buktiTransferUrl ? `
-                            <div class="flex items-center gap-1.5">
-                              <button onclick="viewFile('Bukti_Transfer_${sub.docId}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="flex-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-receipt"></i> Lihat TF
-                              </button>
-                              <label class="cursor-pointer px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200" title="Ganti Bukti Transfer">
-                                <i class="fa-solid fa-pen-to-square"></i>
+                        ${!isNonJuara ? `
+                          <div>
+                            <select onchange="updateDanaStatus('${sub.docId}', this.value)" class="w-full text-xs py-1.5 px-2.5 border border-slate-300 rounded-xl bg-white font-bold text-slate-700 outline-none shadow-sm cursor-pointer hover:border-mpq-600 transition">
+                              <option value="Belum Diproses" ${sub.statusDana === 'Belum Diproses' ? 'selected' : ''}>Belum Diproses</option>
+                              <option value="Disetujui" ${sub.statusDana === 'Disetujui' ? 'selected' : ''}>Disetujui</option>
+                              <option value="Dana Dicairkan" ${sub.statusDana === 'Dana Dicairkan' ? 'selected' : ''}>Dana Dicairkan</option>
+                            </select>
+                          </div>
+                          
+                          <div class="pt-1 border-t border-slate-100">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bukti Transfer:</label>
+                            ${sub.buktiTransferUrl ? `
+                              <div class="flex items-center gap-1.5">
+                                <button onclick="viewFile('Bukti_Transfer_${sub.docId}.jpg', '${sub.buktiTransferUrl}', 'Bukti Transfer Pencairan Dana')" class="flex-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1">
+                                  <i class="fa-solid fa-receipt"></i> Lihat TF
+                                </button>
+                                <label class="cursor-pointer px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200" title="Ganti Bukti Transfer">
+                                  <i class="fa-solid fa-pen-to-square"></i>
+                                  <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.docId}', event)">
+                                </label>
+                                <button onclick="deleteBuktiTransfer('${sub.docId}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg text-[11px] font-bold border border-rose-200 transition" title="Hapus Bukti TF">
+                                  <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                              </div>
+                            ` : `
+                              <label class="cursor-pointer w-full py-1.5 px-2 bg-mpq-800 hover:bg-mpq-900 text-gold-400 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
+                                <i class="fa-solid fa-upload"></i> Bukti TF
                                 <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.docId}', event)">
                               </label>
-                            </div>
-                          ` : `
-                            <label class="cursor-pointer w-full py-1.5 px-2 bg-mpq-800 hover:bg-mpq-900 text-gold-400 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm transition">
-                              <i class="fa-solid fa-upload"></i> Bukti TF
-                              <input type="file" accept=".png,.jpg,.jpeg" class="hidden" onchange="uploadBuktiTransfer('${sub.docId}', event)">
-                            </label>
-                          `}
-                        </div>
+                            `}
+                          </div>
+                        ` : ''}
                       </td>
 
                       <td class="py-4 px-4 text-center">
@@ -1175,7 +1246,8 @@
                         </button>
                       </td>
                     </tr>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -1184,18 +1256,232 @@
       `;
     }
 
-    function renderBadgeReview(status) {
-      const st = (status || '').trim();
-      if (st === 'Sudah Direview' || st === 'Disetujui') {
-        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200"><i class="fa-solid fa-circle-check text-emerald-600"></i> Sudah Direview</span>`;
-      } else if (st === 'Perlu Revisi') {
-        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-emerald-200"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perlu Revisi</span>`;
-      } else {
-        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-100 text-rose-900 border border-emerald-200"><i class="fa-solid fa-circle-xmark text-rose-600"></i> Belum Direview</span>`;
+    // MENU ARSIP PERIODE (DILENGKAPI HISTOGRAM INTERAKTIF DENGAN FILTER DI DALAMNYA)
+    function renderDmphArchivesView() {
+      if (selectedArchiveYear) {
+        const filteredArchivedList = archivedSubmissions.filter(s => s.archivePeriod === selectedArchiveYear);
+        
+        // Hitung histogram untuk arsip tahun terpilih berdasarkan filter aktif
+        let archiveHistogramItems = [];
+        if (archiveStatCategory === 'capaian') {
+          const c1 = filteredArchivedList.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 1').length;
+          const c2 = filteredArchivedList.filter(s => (s.juara || '').trim().toLowerCase() === 'juara 2').length;
+          const c3 = filteredArchivedList.filter(s => {
+            const j = (s.juara || '').trim().toLowerCase();
+            return j === 'juara 3' || j === 'juara iii' || j.includes('juara 3');
+          }).length;
+          const cN = filteredArchivedList.filter(s => {
+            const j = (s.juara || '').trim().toLowerCase();
+            const ajuan = (s.jenisAjuan || '').trim().toLowerCase();
+            return j.includes('non-juara') || ajuan === 'non-juara' || ajuan === 'apresiasi/non-juara';
+          }).length;
+
+          archiveHistogramItems = [
+            { label: 'Juara 1', count: c1, color: 'bg-gradient-to-t from-amber-600 to-amber-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
+            { label: 'Juara 2', count: c2, color: 'bg-gradient-to-t from-slate-600 to-slate-400', badge: 'bg-slate-100 text-slate-800 border-slate-300' },
+            { label: 'Juara 3', count: c3, color: 'bg-gradient-to-t from-amber-800 to-amber-600', badge: 'bg-amber-200 text-amber-950 border-amber-400' },
+            { label: 'Non-Juara / Peserta', count: cN, color: 'bg-gradient-to-t from-teal-700 to-teal-400', badge: 'bg-teal-100 text-teal-900 border-teal-300' }
+          ];
+        } else if (archiveStatCategory === 'jenis') {
+          const j1 = filteredArchivedList.filter(s => (s.jenisAjuan || '').trim() === 'Insentif').length;
+          const j2 = filteredArchivedList.filter(s => (s.jenisAjuan || '').trim() === 'Subsidi').length;
+          const j3 = filteredArchivedList.filter(s => (s.jenisAjuan || '').trim() === 'Transportasi').length;
+          const j4 = filteredArchivedList.filter(s => (s.jenisAjuan || '').trim() === 'Non-Juara').length;
+
+          archiveHistogramItems = [
+            { label: 'Insentif', count: j1, color: 'bg-gradient-to-t from-emerald-800 to-emerald-500', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+            { label: 'Subsidi', count: j2, color: 'bg-gradient-to-t from-blue-800 to-blue-500', badge: 'bg-blue-100 text-blue-900 border-blue-300' },
+            { label: 'Transportasi', count: j3, color: 'bg-gradient-to-t from-purple-800 to-purple-500', badge: 'bg-purple-100 text-purple-900 border-purple-300' },
+            { label: 'Non-Juara', count: j4, color: 'bg-gradient-to-t from-rose-700 to-rose-400', badge: 'bg-rose-100 text-rose-900 border-rose-300' }
+          ];
+        } else if (archiveStatCategory === 'level') {
+          const l1 = filteredArchivedList.filter(s => (s.level || '').trim() === 'Provinsi').length;
+          const l2 = filteredArchivedList.filter(s => (s.level || '').trim() === 'Nasional').length;
+          const l3 = filteredArchivedList.filter(s => (s.level || '').trim() === 'Internasional').length;
+
+          archiveHistogramItems = [
+            { label: 'Provinsi', count: l1, color: 'bg-gradient-to-t from-cyan-700 to-cyan-400', badge: 'bg-cyan-100 text-cyan-900 border-cyan-300' },
+            { label: 'Nasional', count: l2, color: 'bg-gradient-to-t from-mpq-900 to-mpq-600', badge: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
+            { label: 'Internasional', count: l3, color: 'bg-gradient-to-t from-gold-600 to-gold-400', badge: 'bg-amber-100 text-amber-900 border-amber-300' }
+          ];
+        }
+
+        const arcMaxCount = Math.max(...archiveHistogramItems.map(i => i.count), 1);
+
+        return `
+          <div class="w-full space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
+                  <i class="fa-solid fa-box-archive text-gold-500 text-lg"></i> Arsip Data & Histogram Periode: <span class="text-mpq-800">${selectedArchiveYear}</span>
+                </h2>
+              </div>
+              <button onclick="selectedArchiveYear = null; renderApp();" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-md">
+                <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar Periode
+              </button>
+            </div>
+
+            <!-- HISTOGRAM ARSIP DENGAN PILIHAN FILTER LENGKAP -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-5">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-chart-column text-mpq-800"></i> Statistik Historis Arsip Tahun ${selectedArchiveYear}
+                </h3>
+                <span class="text-xs font-bold bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-200">
+                  Total Berkas: ${filteredArchivedList.length}
+                </span>
+              </div>
+
+              <!-- Tombol Filter Kategori Histogram Arsip -->
+              <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex flex-wrap gap-2 items-center justify-between">
+                <span class="text-xs font-bold text-slate-600 uppercase pl-1"><i class="fa-solid fa-filter text-mpq-700"></i> Filter Kategori:</span>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="setArchiveStatCategory('capaian')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${archiveStatCategory === 'capaian' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">Capaian / Juara</button>
+                  <button onclick="setArchiveStatCategory('jenis')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${archiveStatCategory === 'jenis' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">Jenis Ajuan</button>
+                  <button onclick="setArchiveStatCategory('level')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${archiveStatCategory === 'level' ? 'bg-mpq-800 text-gold-400 shadow-md' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">Level Kompetisi</button>
+                </div>
+              </div>
+
+              <div class="h-56 flex items-end justify-around gap-4 pt-6 pb-2 border-b border-slate-200">
+                ${archiveHistogramItems.map(item => {
+                  const heightPercent = arcMaxCount > 0 ? (item.count / arcMaxCount) * 100 : 0;
+                  return `
+                    <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                      <span class="text-xs font-bold text-slate-800 mb-1.5 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">${item.count}</span>
+                      <div class="w-full max-w-[60px] ${item.color} rounded-t-xl shadow-sm transition-all duration-500" style="height: ${heightPercent > 0 ? heightPercent : 4}%;"></div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+
+              <div class="flex justify-around gap-2 text-center">
+                ${archiveHistogramItems.map(item => `
+                  <div class="flex-1 flex flex-col items-center">
+                    <span class="text-xs font-bold px-3 py-1 rounded-xl border ${item.badge} shadow-sm">
+                      ${item.label}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- TABEL DATA ARSIP -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+              <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                  <i class="fa-solid fa-table text-mpq-800"></i> Tabel Rincian Data Arsip Tahun ${selectedArchiveYear}
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-800 text-white text-xs font-bold uppercase tracking-wider">
+                      <th class="py-3.5 px-4">Pengusul & Event</th>
+                      <th class="py-3.5 px-4">Jenis Ajuan</th>
+                      <th class="py-3.5 px-4">Nominal & Rekening</th>
+                      <th class="py-3.5 px-4">Cabang Lomba</th>
+                      <th class="py-3.5 px-4">Jenis Kompetisi</th>
+                      <th class="py-3.5 px-4">Capaian</th>
+                      <th class="py-3.5 px-4">Status Dana (Terkunci)</th>
+                      <th class="py-3.5 px-4 text-center">Berkas</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 text-xs">
+                    ${filteredArchivedList.length === 0 ? `
+                      <tr>
+                        <td colspan="8" class="py-16 text-center text-slate-400">Belum ada data pada periode ${selectedArchiveYear}.</td>
+                      </tr>
+                    ` : filteredArchivedList.map((sub) => `
+                      <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-4 px-4">
+                          <p class="font-bold text-slate-900 text-sm">${sub.pengusulName}</p>
+                          <p class="text-[11px] font-serif text-slate-500">${sub.pengusulNim}</p>
+                          <p class="font-bold text-xs text-mpq-800 mt-1">${sub.namaEvent}</p>
+                        </td>
+                        <td class="py-4 px-4">
+                          <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-100 text-emerald-900">${sub.jenisAjuan || 'Insentif'}</span>
+                        </td>
+                        <td class="py-4 px-4">
+                          <span class="font-bold text-emerald-800 block">${sub.nominalDetail ? `Rp ${sub.nominalDetail}` : '-'}</span>
+                          ${sub.rekeningProvider ? `
+                            <div class="mt-1 pt-1 border-t border-slate-100 text-[11px] text-slate-600">
+                              <span class="font-bold text-slate-700">${sub.rekeningProvider}</span>: <span class="font-serif">${sub.nomorRekening}</span>
+                            </div>
+                          ` : '<span class="text-[10px] text-slate-400 italic">Peserta</span>'}
+                        </td>
+                        <td class="py-4 px-4 font-bold text-slate-800">${sub.namaCabang || '-'}</td>
+                        <td class="py-4 px-4">
+                          <span class="inline-block px-2 py-0.5 rounded-lg text-[10px] font-bold ${(sub.jenisKompetisi === 'Tim' || sub.jenisKompetisi === 'Kelompok/Tim' || sub.jenisKompetisi === 'Kelompok') ? 'bg-purple-100 text-purple-900 border border-purple-200' : 'bg-blue-100 text-blue-900 border border-blue-200'}">
+                            ${sub.jenisKompetisi || 'Individu'}
+                          </span>
+                          ${((sub.jenisKompetisi === 'Tim' || sub.jenisKompetisi === 'Kelompok/Tim' || sub.jenisKompetisi === 'Kelompok') && sub.namaTim) ? `
+                            <div class="mt-1.5 p-2 bg-slate-50 rounded-xl border border-slate-200 text-[10px] text-slate-600 leading-tight">
+                              <span class="font-bold text-purple-900 block mb-0.5"><i class="fa-solid fa-users"></i> Anggota Tim:</span>
+                              ${sub.namaTim}
+                            </div>
+                          ` : ''}
+                        </td>
+                        <td class="py-4 px-4 font-bold">${sub.juara}</td>
+                        <td class="py-4 px-4">
+                          ${renderBadgeDana(sub.statusDana, sub.jenisAjuan)}
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                          <button onclick="viewFile('${sub.sertifikatName}', '${sub.fileUrl || ''}', 'Sertifikat Arsip')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border rounded-xl text-xs font-bold inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-image text-emerald-600"></i> Lihat
+                          </button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
       }
+
+      const uniquePeriods = [...new Set(archivedSubmissions.map(s => s.archivePeriod || '2026'))];
+      if (uniquePeriods.length === 0) uniquePeriods.push('2026');
+
+      return `
+        <div class="w-full space-y-6">
+          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-mpq-900 flex items-center gap-2.5">
+                <i class="fa-solid fa-box-archive text-gold-500 text-lg"></i> Arsip Periode Pengajuan & Statistik
+              </h2>
+            </div>
+            <button onclick="switchTab('dmph_review')" class="px-4 py-2.5 bg-mpq-800 hover:bg-mpq-900 text-white rounded-2xl text-xs font-bold transition flex items-center gap-2 shadow-md">
+              <i class="fa-solid fa-list-check"></i> Kembali ke Review
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+            ${uniquePeriods.map(period => {
+              const count = archivedSubmissions.filter(s => (s.archivePeriod || '2026') === period).length;
+              return `
+                <div onclick="selectedArchiveYear = '${period}'; renderApp();" class="bg-white hover:bg-emerald-50/60 p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md cursor-pointer transition transform hover:-translate-y-1 flex flex-col items-center text-center space-y-2 relative group">
+                  <button onclick="deleteArchiveYear('${period}', event)" class="absolute top-3 right-3 w-7 h-7 bg-rose-50 hover:bg-rose-600 text-rose-500 hover:text-white rounded-full flex items-center justify-center text-xs transition border border-rose-200 shadow-sm" title="Hapus Arsip Periode ${period}">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                  <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-mpq-900 flex items-center justify-center text-2xl font-bold shadow-inner mt-1">
+                    <i class="fa-solid fa-folder-open text-gold-600"></i>
+                  </div>
+                  <h3 class="font-bold text-slate-900 text-base">${period}</h3>
+                  <span class="text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">${count} Arsip </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
     }
 
-    function renderBadgeDana(status) {
+    function renderBadgeDana(status, jenisAjuan = '') {
+      const j = (jenisAjuan || '').trim();
+      if (j === 'Non-Juara' || j === 'Apresiasi/Non-Juara') {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300"><i class="fa-solid fa-user-check text-slate-500"></i> Peserta </span>`;
+      }
       if (status === 'Dana Dicairkan') {
         return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-mpq-800 text-white shadow-sm"><i class="fa-solid fa-money-bill-check text-gold-400"></i> Dana Dicairkan</span>`;
       } else if (status === 'Disetujui') {
@@ -1218,13 +1504,7 @@
         const nimExtract = emailInput.split('@')[0].toUpperCase();
         let account = ACCOUNTS.find(a => a.email.toLowerCase() === emailInput);
         if (!account) {
-          account = {
-            email: emailInput,
-            pass: '',
-            name: `MAHASISWA (${nimExtract})`,
-            nim: nimExtract,
-            role: 'mahasiswa'
-          };
+          account = { email: emailInput, pass: '', name: `MAHASISWA (${nimExtract})`, nim: nimExtract, role: 'mahasiswa' };
           ACCOUNTS.push(account);
         }
 
@@ -1264,7 +1544,8 @@
     }
 
     function switchTab(tab) {
-      if (currentUser.role === 'mahasiswa' && tab === 'dmph_review') return;
+      if (currentUser.role === 'mahasiswa' && (tab === 'dmph_review' || tab === 'archives')) return;
+      if (tab === 'archives') selectedArchiveYear = null; 
       currentTab = tab;
       renderApp();
     }
@@ -1362,11 +1643,6 @@
               statusDana: 'Dana Dicairkan'
             }).then(() => {
               showToast('Berhasil!', 'Bukti transfer berhasil diunggah ke sistem.', 'success');
-              triggerEmailNotification(
-                sub.userEmail,
-                `Dana LASKAR Telah Dicairkan: ${sub.namaEvent}`,
-                `Assalamu'alaikum Wr. Wb. Sdr/i <strong>${sub.pengusulName}</strong>,<br><br>Dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah ditransfer ke rekening / e-wallet Anda.`
-              );
               loadSubmissionsFromCloud();
             }).catch(err => {
               showToast('Gagal', 'Gagal menyimpan bukti transfer ke database.', 'error');
@@ -1378,6 +1654,23 @@
       }
     }
 
+    function deleteBuktiTransfer(docId) {
+      const sub = submissions.find(s => s.docId === docId);
+      if (!sub) return;
+
+      if (confirm('Apakah Anda yakin ingin menghapus foto bukti transfer ini? Status dana akan dikembalikan ke "Disetujui".')) {
+        db.collection("submissions").doc(docId).update({
+          buktiTransferUrl: '',
+          statusDana: 'Disetujui'
+        }).then(() => {
+          showToast('Bukti TF Dihapus', 'Bukti transfer telah dihapus dari sistem.', 'info');
+          loadSubmissionsFromCloud();
+        }).catch(err => {
+          showToast('Gagal', 'Gagal menghapus bukti transfer.', 'error');
+        });
+      }
+    }
+
     function handleFormSubmit(e) {
       e.preventDefault();
       if (!selectedFileUrl) {
@@ -1386,9 +1679,7 @@
       }
 
       const namaManual = document.getElementById('formNamaMahasiswa').value.trim();
-      if (namaManual) {
-        currentUser.name = namaManual;
-      }
+      if (namaManual) currentUser.name = namaManual;
 
       const jenis = document.getElementById('jenisAjuan').value;
       const isNonRek = (jenis === 'Non-Juara' || jenis === 'Apresiasi/Non-Juara');
@@ -1425,8 +1716,7 @@
         sertifikatName: selectedFileName,
         fileUrl: selectedFileUrl, 
         buktiTransferUrl: '',
-        statusReview: 'Belum Direview',
-        statusDana: isNonRek ? 'Selesai' : 'Belum Diproses',
+        statusDana: isNonRek ? 'Peserta (Tanpa Dana)' : 'Belum Diproses',
         catatanAdmin: '',
         createdAt: formattedDate
       };
@@ -1447,41 +1737,29 @@
       });
     }
 
-    function updateReviewStatus(docId, newStatus) {
-      if (currentUser.role !== 'dmph') return;
-      const sub = submissions.find(s => s.docId === docId);
-      if (!sub) {
-        showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
-        return;
-      }
-      sub.statusReview = newStatus;
-      renderApp();
-      db.collection("submissions").doc(docId).update({ 
-        statusReview: newStatus 
-      }).then(() => {
-        showToast('Berhasil', `Status review diperbarui menjadi ${newStatus}.`, 'info');
-      }).catch((err) => {
-        showToast('Gagal', 'Gagal memperbarui status review ke database.', 'error');
-      });
-    }
-
     function updateDanaStatus(docId, newStatus) {
       if (currentUser.role !== 'dmph') return;
       const sub = submissions.find(s => s.docId === docId);
-      if (!sub) {
-        showToast('Error', 'Data pengajuan tidak ditemukan di memori.', 'error');
-        return;
-      }
+      if (!sub) return;
+
       sub.statusDana = newStatus;
+
+      const badgeContainer = document.getElementById(`badge-dana-container-${docId}`);
+      if (badgeContainer) {
+        badgeContainer.innerHTML = renderBadgeDana(newStatus, sub.jenisAjuan);
+      }
+
+      const rowElement = document.getElementById(`row-${docId}`);
+      if (rowElement) {
+        rowElement.setAttribute('data-dana', newStatus);
+      }
+
+      filterAdminTable();
+
       db.collection("submissions").doc(docId).update({ 
         statusDana: newStatus 
       }).then(() => {
         showToast('Berhasil', `Status dana diperbarui menjadi ${newStatus}.`, 'success');
-        triggerEmailNotification(
-          sub.userEmail,
-          `Pencairan Dana LASKAR: ${sub.namaEvent}`,
-          `Status pencairan dana untuk pengajuan <strong>${sub.namaEvent}</strong> telah diperbarui menjadi: <strong>${newStatus}</strong>`
-        );
       }).catch((err) => {
         showToast('Gagal', 'Gagal memperbarui status dana ke database.', 'error');
       });
@@ -1489,10 +1767,7 @@
 
     function deleteSubmission(docId) {
       const sub = submissions.find(s => s.docId === docId);
-      if (!sub) {
-        showToast('Error', 'Data pengajuan tidak ditemukan.', 'error');
-        return;
-      }
+      if (!sub) return;
       if (confirm('Apakah Anda yakin ingin menghapus pengajuan ini?')) {
         db.collection("submissions").doc(docId).delete().then(() => {
           showToast('Berhasil Dihapus', `Data pengajuan telah dihapus dari cloud.`, 'success');
@@ -1503,25 +1778,61 @@
       }
     }
 
+    function deleteArchiveYear(period, event) {
+      if (event) event.stopPropagation();
+
+      const targets = archivedSubmissions.filter(s => (s.archivePeriod || '2026') === period);
+      if (targets.length === 0) {
+        showToast('Informasi', `Tidak ada data arsip di periode ${period}.`, 'info');
+        return;
+      }
+
+      if (confirm(`Apakah Anda yakin ingin menghapus SELURUH data arsip & histogram periode ${period} (${targets.length} berkas)? \n\nTindakan ini tidak dapat dibatalkan.`)) {
+        showToast('Memproses', `Menghapus arsip periode ${period}...`, 'info');
+        
+        const batch = db.batch();
+        targets.forEach(item => {
+          const ref = db.collection("archives").doc(item.docId);
+          batch.delete(ref);
+        });
+
+        batch.commit().then(() => {
+          archivedSubmissions = archivedSubmissions.filter(s => (s.archivePeriod || '2026') !== period);
+          if (selectedArchiveYear === period) selectedArchiveYear = null;
+
+          showToast('Arsip Dihapus', `Seluruh berkas arsip & histogram periode ${period} berhasil dibersihkan.`, 'success');
+          renderApp();
+        }).catch(err => {
+          console.error(err);
+          showToast('Gagal', 'Gagal menghapus data arsip periode.', 'error');
+        });
+      }
+    }
+
     function filterAdminTable() {
-      const search = document.getElementById('adminSearch').value.toLowerCase();
-      const jenisFilter = document.getElementById('adminFilterJenis').value;
-      const reviewFilter = document.getElementById('adminFilterReview').value;
-      const danaFilter = document.getElementById('adminFilterDana').value;
+      const searchEl = document.getElementById('adminSearch');
+      const jenisEl = document.getElementById('adminFilterJenis');
+      const danaEl = document.getElementById('adminFilterDana');
+
+      if (searchEl) currentAdminSearch = searchEl.value;
+      if (jenisEl) currentAdminFilterJenis = jenisEl.value;
+      if (danaEl) currentAdminFilterDana = danaEl.value;
+
+      const search = currentAdminSearch.toLowerCase();
+      const jenisFilter = currentAdminFilterJenis;
+      const danaFilter = currentAdminFilterDana;
 
       const rows = document.querySelectorAll('.submission-row');
       rows.forEach(row => {
         const rowSearch = row.getAttribute('data-search');
         const rowJenis = row.getAttribute('data-jenis');
-        const rowReview = row.getAttribute('data-review');
         const rowDana = row.getAttribute('data-dana');
 
         const matchSearch = rowSearch.includes(search);
         const matchJenis = jenisFilter === 'ALL' || rowJenis === jenisFilter;
-        const matchReview = reviewFilter === 'ALL' || rowReview === reviewFilter;
         const matchDana = danaFilter === 'ALL' || rowDana === danaFilter;
 
-        if (matchSearch && matchJenis && matchReview && matchDana) {
+        if (matchSearch && matchJenis && matchDana) {
           row.style.display = '';
         } else {
           row.style.display = 'none';
@@ -1529,48 +1840,80 @@
       });
     }
 
-    function triggerEmailNotification(toEmail, subject, htmlBody) {
-      pendingEmailData = { to_email: toEmail, subject: subject, message: htmlBody };
-      document.getElementById('email-modal-to').innerText = toEmail;
-      document.getElementById('email-modal-subject').innerText = subject;
-      document.getElementById('email-modal-body').innerHTML = htmlBody;
-      document.getElementById('email-modal-time').innerText = new Date().toLocaleString('id-ID');
-      document.getElementById('email-modal').classList.remove('hidden');
+    function openArchiveModal() {
+      const currentYear = new Date().getFullYear();
+      document.getElementById('active-archive-year-label').innerText = currentYear;
+      document.getElementById('archive-modal').classList.remove('hidden');
     }
 
-    function executeSendEmail() {
-      if (!pendingEmailData) return;
-      const btn = document.getElementById('btn-send-real-email');
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...`;
+    function closeArchiveModal() {
+      document.getElementById('archive-modal').classList.add('hidden');
+    }
 
-      const SERVICE_ID = "Haloo Kami DMPH";
-      const TEMPLATE_ID = "template_tg4uugj";
-
-      if (typeof emailjs !== 'undefined') {
-        emailjs.send(SERVICE_ID, TEMPLATE_ID, pendingEmailData)
-          .then(function(response) {
-             showToast('Email Terkirim!', `Email berhasil dikirimkan ke ${pendingEmailData.to_email}`, 'success');
-             closeEmailModal();
-          }, function(error) {
-             showToast('Pengiriman Disimulasikan', 'Notifikasi dicatat secara lokal.', 'info');
-             closeEmailModal();
-          })
-          .finally(() => {
-             btn.disabled = false;
-             btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Email Sekarang`;
-          });
-      } else {
-        showToast('Simulasi Berhasil', `Notifikasi email disimulasikan ke ${pendingEmailData.to_email}`, 'info');
-        closeEmailModal();
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Email Sekarang`;
+    function executeAutoArchive() {
+      const currentYear = String(new Date().getFullYear());
+      if (submissions.length === 0) {
+        showToast('Informasi', 'Tidak ada data pengajuan aktif untuk diarsipkan.', 'info');
+        closeArchiveModal();
+        return;
       }
+
+      const btn = document.getElementById('btn-execute-archive');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memproses Arsip...`;
+
+      const batch = db.batch();
+      const newlyArchived = [];
+
+      submissions.forEach((sub) => {
+        const archiveRef = db.collection("archives").doc();
+        let archiveData = { ...sub, archivePeriod: currentYear, archivedAt: new Date().toISOString() };
+        delete archiveData.docId;
+        
+        batch.set(archiveRef, archiveData);
+        newlyArchived.push({ ...archiveData, docId: archiveRef.id });
+      });
+
+      batch.commit().then(() => {
+        archivedSubmissions = [...newlyArchived, ...archivedSubmissions];
+        showToast('Berhasil Diproses!', `Seluruh data (${submissions.length}) & rekap histogram berhasil masuk ke Arsip Periode ${currentYear}.`, 'success');
+        closeArchiveModal();
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-box-archive"></i> Ya, Arsipkan Sekarang`;
+        
+        currentTab = 'archives';
+        selectedArchiveYear = currentYear;
+        renderApp();
+      }).catch(err => {
+        console.error(err);
+        showToast('Gagal', 'Gagal memproses pengarsipan data.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-box-archive"></i> Ya, Arsipkan Sekarang`;
+      });
     }
 
-    function closeEmailModal() {
-      document.getElementById('email-modal').classList.add('hidden');
-      pendingEmailData = null;
+    function executeResetActiveData() {
+      if (submissions.length === 0) {
+        showToast('Informasi', 'Tabel pengajuan aktif sudah kosong.', 'info');
+        return;
+      }
+      
+      if (confirm('Yakin ingin mereset/membersihkan seluruh data aktif di panel DMPH? \n\n(Catatan: Data yang sudah diarsipkan di Arsip Periode beserta histogramnya tidak akan terpengaruh dan tetap aman).')) {
+        showToast('Memproses', 'Membersihkan data pengajuan aktif...', 'info');
+        
+        const batch = db.batch();
+        submissions.forEach((sub) => {
+          const docRef = db.collection("submissions").doc(sub.docId);
+          batch.delete(docRef);
+        });
+
+        batch.commit().then(() => {
+          showToast('Berhasil Reset', 'Seluruh data pengajuan aktif telah dibersihkan dari tabel DMPH.', 'success');
+          loadSubmissionsFromCloud();
+        }).catch(err => {
+          showToast('Gagal', 'Terjadi kesalahan saat mereset data.', 'error');
+        });
+      }
     }
 
     function viewFile(filename, fileUrl, title = 'Pratinjau Berkas Dokumen') {
@@ -1659,14 +2002,41 @@
     }
 
     function loadSubmissionsFromCloud() {
-      db.collection("submissions").orderBy("createdAt", "desc").get().then((querySnapshot) => {
+      Promise.all([
+        db.collection("submissions").orderBy("createdAt", "desc").get(),
+        db.collection("archives").get()
+      ]).then(([subSnapshot, archSnapshot]) => {
         let tempSubmissions = [];
-        querySnapshot.forEach((doc) => {
+        subSnapshot.forEach((doc) => {
           let data = doc.data();
           data.docId = doc.id; 
           tempSubmissions.push(data);
         });
         submissions = tempSubmissions;
+
+        let tempArchives = [];
+        const currentYearNum = new Date().getFullYear();
+        const batchDelete = db.batch();
+        let hasExpiredData = false;
+
+        archSnapshot.forEach((doc) => {
+          let data = doc.data();
+          data.docId = doc.id;
+          const archiveYear = parseInt(data.archivePeriod || currentYearNum, 10);
+
+          if (currentYearNum - archiveYear > 2) {
+            batchDelete.delete(db.collection("archives").doc(doc.id));
+            hasExpiredData = true;
+          } else {
+            tempArchives.push(data);
+          }
+        });
+
+        if (hasExpiredData) {
+          batchDelete.commit().catch(err => console.error("Gagal membersihkan arsip kedaluwarsa:", err));
+        }
+
+        archivedSubmissions = tempArchives;
         renderApp();
       }).catch((error) => {
         console.error("Gagal mengambil data dari Firestore: ", error);
