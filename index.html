@@ -189,31 +189,6 @@
     let currentAdminSearch = '';
     let currentAdminFilterJenis = 'ALL';
     let currentAdminFilterDana = 'ALL';
-    // 1. Tambahkan fungsi ini di bagian script global Anda
-loadSubmissionsFromCloud() {
-  db.collection("submissions")
-    .get()
-    .then((querySnapshot) => {
-      submissions = [];
-      querySnapshot.forEach((doc) => {
-        submissions.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      console.log("Berhasil memuat data dari Firebase:", submissions.length, "data.");
-      renderApp();
-    })
-    .catch((error) => {
-      console.error("Gagal mengambil data dari Firebase: ", error);
-    });
-}
-
-// 2. Pastikan fungsi ini dipanggil saat halaman pertama kali dibuka
-window.addEventListener('window.onload', () => {
-  verifyAndLoadSession();
-  fetchSubmissionsFromFirebase(); // Memanggil data dari Firestore agar kembali terisi
-});
 
     function createEncryptedToken(user) {
       const payload = {
