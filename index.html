@@ -2033,9 +2033,9 @@ window.addEventListener('DOMContentLoaded', () => {
       input.value = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
     }
 
-    function loadSubmissionsFromCloud() {
+        function loadSubmissionsFromCloud() {
       Promise.all([
-        db.collection("submissions").orderBy("createdAt", "desc").get(),
+        db.collection("submissions").get(), // <--- Ganti menjadi ini agar aman
         db.collection("archives").get()
       ]).then(([subSnapshot, archSnapshot]) => {
         let tempSubmissions = [];
