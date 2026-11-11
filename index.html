@@ -24,9 +24,14 @@
       measurementId: "G-EK1HLC7NZS"
     };
 
-    // Inisialisasi Firebase & Database Firestore
+        // Inisialisasi Firebase
     firebase.initializeApp(firebaseConfig);
+    
+    // Inisialisasi Database Firestore
     const db = firebase.firestore();
+    
+    // PERBAIKAN: Aktifkan auto-detect Long Polling untuk mengatasi masalah koneksi/timeout
+    db.settings({ experimentalAutoDetectLongPolling: true });
 
     tailwind.config = {
       theme: {
@@ -182,6 +187,31 @@
     let currentAdminSearch = '';
     let currentAdminFilterJenis = 'ALL';
     let currentAdminFilterDana = 'ALL';
+    // 1. Tambahkan fungsi ini di bagian script global Anda
+function fetchSubmissionsFromFirebase() {
+  db.collection("submissions")
+    .get()
+    .then((querySnapshot) => {
+      submissions = [];
+      querySnapshot.forEach((doc) => {
+        submissions.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      console.log("Berhasil memuat data dari Firebase:", submissions.length, "data.");
+      renderApp();
+    })
+    .catch((error) => {
+      console.error("Gagal mengambil data dari Firebase: ", error);
+    });
+}
+
+// 2. Pastikan fungsi ini dipanggil saat halaman pertama kali dibuka
+window.addEventListener('DOMContentLoaded', () => {
+  verifyAndLoadSession();
+  fetchSubmissionsFromFirebase(); // Memanggil data dari Firestore agar kembali terisi
+});
 
     function createEncryptedToken(user) {
       const payload = {
