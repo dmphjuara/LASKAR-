@@ -27,11 +27,13 @@
         // Inisialisasi Firebase
     firebase.initializeApp(firebaseConfig);
     
-    // Inisialisasi Database Firestore
-    const db = firebase.firestore(); db.settings({    experimentalForceLongPolling: true  });
+       // Inisialisasi Database Firestore
+    const db = firebase.firestore(); 
     
-    // PERBAIKAN: Aktifkan auto-detect Long Polling untuk mengatasi masalah koneksi/timeout
-    db.settings({ experimentalAutoDetectLongPolling: true });
+    // PERBAIKAN TERKUAT: Cukup panggil ini SATU KALI saja
+    db.settings({    
+      experimentalForceLongPolling: true  
+    });
 
     tailwind.config = {
       theme: {
