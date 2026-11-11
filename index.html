@@ -24,13 +24,13 @@
       measurementId: "G-EK1HLC7NZS"
     };
 
-        // Inisialisasi Firebase
+                // 1. Inisialisasi Firebase App Anda (WAJIB ADA)
     firebase.initializeApp(firebaseConfig);
     
-       // Inisialisasi Database Firestore
+    // 2. Inisialisasi Database Firestore (Cukup panggil satu kali)
     const db = firebase.firestore(); 
     
-    // PERBAIKAN TERKUAT: Cukup panggil ini SATU KALI saja
+    // 3. Gunakan pengaturan Long Polling TERKUAT (Hanya panggil SATU KALI)
     db.settings({    
       experimentalForceLongPolling: true  
     });
