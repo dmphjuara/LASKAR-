@@ -28,7 +28,7 @@
     firebase.initializeApp(firebaseConfig);
     
     // Inisialisasi Database Firestore
-    const db = firebase.firestore();
+    const db = firebase.firestore(); db.settings({    experimentalForceLongPolling: true  });
     
     // PERBAIKAN: Aktifkan auto-detect Long Polling untuk mengatasi masalah koneksi/timeout
     db.settings({ experimentalAutoDetectLongPolling: true });
