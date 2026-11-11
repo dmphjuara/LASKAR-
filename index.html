@@ -190,7 +190,7 @@
     let currentAdminFilterJenis = 'ALL';
     let currentAdminFilterDana = 'ALL';
     // 1. Tambahkan fungsi ini di bagian script global Anda
-function fetchSubmissionsFromFirebase() {
+loadSubmissionsFromCloud() {
   db.collection("submissions")
     .get()
     .then((querySnapshot) => {
@@ -210,7 +210,7 @@ function fetchSubmissionsFromFirebase() {
 }
 
 // 2. Pastikan fungsi ini dipanggil saat halaman pertama kali dibuka
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('window.onload', () => {
   verifyAndLoadSession();
   fetchSubmissionsFromFirebase(); // Memanggil data dari Firestore agar kembali terisi
 });
